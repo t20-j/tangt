@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的工具站 · 零基础第一个项目</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --text:#1b2333; --muted:#6b7488;
+    --border:#e6eaf3; --accent:#4f6ef7; --accent-weak:#eef1ff;
+    --shadow:0 6px 24px rgba(31,45,80,.06); --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0e1320; --card:#161d2c; --text:#e9edf6; --muted:#909bb0;
+           --border:#242e42; --accent:#7c92ff; --accent-weak:#1c2540;
+           --shadow:0 6px 24px rgba(0,0,0,.35); }
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--bg); color:var(--text); min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{ max-width:1100px; margin:0 auto; padding:56px 24px 8px; }
+  h1{ margin:0 0 10px; font-size:clamp(26px,4vw,40px); letter-spacing:-.5px; }
+  .sub{ color:var(--muted); font-size:15px; line-height:1.7; margin:0; }
+  main{
+    max-width:1100px; margin:0 auto; padding:24px; display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; align-items:start;
+  }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:22px; box-shadow:var(--shadow);
+  }
+  .card h2{ margin:0 0 4px; font-size:17px; }
+  .card .hint{ margin:0 0 16px; color:var(--muted); font-size:13px; }
+  .field{ display:flex; flex-direction:column; gap:6px; flex:1; min-width:88px; }
+  label{ font-size:12px; color:var(--muted); }
+  input, select, textarea, button{ font-family:inherit; font-size:14px; color:var(--text); }
+  input[type=number], input[type=text], select, textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
+    background:var(--bg); outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-weak); }
+  .row{ display:flex; gap:10px; margin-bottom:12px; }
+  button{
+    border:0; border-radius:10px; padding:10px 16px; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:600; transition:opacity .15s, transform .05s;
+  }
+  button:hover{ opacity:.9; }
+  button:active{ transform:translateY(1px); }
+  button.ghost{ background:var(--accent-weak); color:var(--accent); }
+  .result{
+    margin-top:12px; padding:14px; border-radius:12px; background:var(--accent-weak);
+    color:var(--accent); font-size:20px; font-weight:700; text-align:center; word-break:break-all;
+  }
+  .checkbox-row{ display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 14px; }
+  .checkbox-row label{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer; }
+  .textarea-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .stat{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px; }
+  .stat:last-child{ border-bottom:0; }
+  footer{ max-width:1100px; margin:0 auto; padding:8px 24px 48px; color:var(--muted); font-size:13px; text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧰 我的工具站</h1>
+  <p class="sub">零基础第一个项目 · 纯 HTML + CSS + JavaScript，单文件，无需安装任何东西。</p>
+</header>
+
+<main>
+
+  <!-- 工具 1：单位换算 -->
+  <section class="card">
+    <h2>📏 单位换算</h2>
+    <p class="hint">输入数值，自动换算</p>
+    <div class="row">
+      <div class="field">
+        <label for="cat">类别</label>
+        <select id="cat">
+          <option>长度</option>
+          <option>重量</option>
+          <option>温度</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="val">数值</label><input id="val" type="number" value="1" step="any"></div>
+      <div class="field"><label for="from">从</label><select id="from"></select></div>
+      <div class="field"><label for="to">到</label><select id="to"></select></div>
+    </div>
+    <div class="result" id="unitResult">1</div>
+  </section>
+
+  <!-- 工具 2：密码生成器 -->
+  <section class="card">
+    <h2>🔑 密码生成器</h2>
+    <p class="hint">在本地生成，不会上传到任何服务器</p>
+    <div class="row">
+      <div class="field">
+        <label for="len">长度：<span id="lenVal">16</span></label>
+        <input id="len" type="range" min="6" max="40" value="16">
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="cbUpper" checked> 大写字母</label>
+      <label><input type="checkbox" id="cbLower" checked> 小写字母</label>
+      <label><input type="checkbox" id="cbDigit" checked> 数字</label>
+      <label><input type="checkbox" id="cbSymbol"> 符号</label>
+    </div>
+    <div class="row">
+      <button id="genBtn">生成密码</button>
+      <button class="ghost" id="copyBtn">复制</button>
+    </div>
+    <div class="result" id="pwdResult">点击「生成密码」</div>
+  </section>
+
+  <!-- 工具 3：文本工具 -->
+  <section class="card">
+    <h2>📝 文本工具</h2>
+    <p class="hint">实时统计字数</p>
+    <textarea id="textArea" rows="4" placeholder="在这里粘贴文字…"></textarea>
+    <div class="textarea-row">
+      <button class="ghost" id="upperBtn">转大写</button>
+      <button class="ghost" id="lowerBtn">转小写</button>
+      <button class="ghost" id="clearBtn">清空</button>
+    </div>
+    <div style="margin-top:12px">
+      <div class="stat"><span>字符数</span><b id="charCount">0</b></div>
+      <div class="stat"><span>单词数</span><b id="wordCount">0</b></div>
+      <div class="stat"><span>行数</span><b id="lineCount">0</b></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>用浏览器双击打开即可 · 想改配色就改 :root 里的 --accent</footer>
+
+<script>
+/* ========== 1. 单位换算 ========== */
+const unitData = {
+  长度: { 米:1, 厘米:0.01, 毫米:0.001, 千米:1000, 英寸:0.0254, 英尺:0.3048 },
+  重量: { 克:1, 千克:1000, 斤:500, 磅:453.59237, 盎司:28.349523125 }
+};
+const TEMP_UNITS = ['摄氏度', '华氏度', '开尔文'];
+
+const catSel = document.getElementById('cat');
+const fromSel = document.getElementById('from');
+const toSel = document.getElementById('to');
+const valInput = document.getElementById('val');
+const unitResult = document.getElementById('unitResult');
+
+function fillUnits() {
+  const cat = catSel.value;
+  const list = cat === '温度' ? TEMP_UNITS : Object.keys(unitData[cat]);
+  fromSel.innerHTML = list.map(u => `<option>${u}</option>`).join('');
+  toSel.innerHTML = list.map(u => `<option>${u}</option>`).join('');
+  toSel.selectedIndex = Math.min(1, list.length - 1);
+  convertUnit();
+}
+
+function toCelsius(v, unit) {
+  if (unit === '华氏度') return (v - 32) * 5 / 9;
+  if (unit === '开尔文') return v - 273.15;
+  return v;
+}
+function fromCelsius(c, unit) {
+  if (unit === '华氏度') return c * 9 / 5 + 32;
+  if (unit === '开尔文') return c + 273.15;
+  return c;
+}
+
+function convertUnit() {
+  const v = parseFloat(valInput.value);
+  if (!isFinite(v)) { unitResult.textContent = '请输入数字'; return; }
+  const cat = catSel.value;
+  let out;
+  if (cat === '温度') {
+    out = fromCelsius(toCelsius(v, fromSel.value), toSel.value);
+  } else {
+    const u = unitData[cat];
+    out = v * u[fromSel.value] / u[toSel.value];
+  }
+  const pretty = parseFloat(out.toPrecision(12));
+  unitResult.textContent = `${pretty} ${toSel.value}`;
+}
+
+catSel.addEventListener('change', fillUnits);
+fromSel.addEventListener('change', convertUnit);
+toSel.addEventListener('change', convertUnit);
+valInput.addEventListener('input', convertUnit);
+
+/* ========== 2. 密码生成器 ========== */
+const CHARSETS = {
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  digit: '0123456789',
+  symbol: '!@#$%^&*()-_=+[]{};:,.?'
+};
+const lenInput = document.getElementById('len');
+const lenVal = document.getElementById('lenVal');
+const pwdResult = document.getElementById('pwdResult');
+const cbs = {
+  upper: document.getElementById('cbUpper'),
+  lower: document.getElementById('cbLower'),
+  digit: document.getElementById('cbDigit'),
+  symbol: document.getElementById('cbSymbol')
+};
+
+lenInput.addEventListener('input', () => { lenVal.textContent = lenInput.value; });
+
+function randomInt(max) {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] % max;
+}
+
+document.getElementById('genBtn').addEventListener('click', () => {
+  let pool = '';
+  for (const key in cbs) if (cbs[key].checked) pool += CHARSETS[key];
+  if (!pool) { pwdResult.textContent = '请至少勾选一种字符'; return; }
+  const n = Number(lenInput.value);
+  let s = '';
+  for (let i = 0; i < n; i++) s += pool[randomInt(pool.length)];
+  pwdResult.textContent = s;
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const txt = pwdResult.textContent;
+  if (!txt || txt.startsWith('点击') || txt.startsWith('请') || txt.startsWith('✅')) return;
+  try {
+    await navigator.clipboard.writeText(txt);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+  pwdResult.textContent = '✅ 已复制';
+  setTimeout(() => { pwdResult.textContent = txt; }, 900);
+});
+
+/* ========== 3. 文本工具 ========== */
+const ta = document.getElementById('textArea');
+const charCount = document.getElementById('charCount');
+const wordCount = document.getElementById('wordCount');
+const lineCount = document.getElementById('lineCount');
+
+function updateStats() {
+  const t = ta.value;
+  charCount.textContent = t.length;
+  wordCount.textContent = t.trim() ? t.trim().split(/\s+/).length : 0;
+  lineCount.textContent = t ? t.split('\n').length : 0;
+}
+ta.addEventListener('input', updateStats);
+document.getElementById('upperBtn').addEventListener('click', () => { ta.value = ta.value.toUpperCase(); updateStats(); });
+document.getElementById('lowerBtn').addEventListener('click', () => { ta.value = ta.value.toLowerCase(); updateStats(); });
+document.getElementById('clearBtn').addEventListener('click', () => { ta.value = ''; updateStats(); });
+
+/* ========== 初始化 ========== */
+fillUnits();
+updateStats();
+</script>
+</body>
+</html>
