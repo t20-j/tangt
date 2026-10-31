@@ -23,7 +23,7 @@
 开启 GitHub Pages 后访问：
 
 ```
-https://<你的用户名>.github.io/<仓库名>/
+https://t20-j.github.io/tangt
 ```
 
 ## 后续计划
