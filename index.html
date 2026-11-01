@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="一个纯前端的多功能工具箱：单位换算、密码生成、文本工具，数独、舒尔特方格、五子棋，屏幕尺子、分贝仪，以及 IP 地址查询入口。">
+<meta name="theme-color" content="#4f6ef7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我的工具箱">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <title>我的工具箱 · 单位换算 / 密码生成 / 小游戏 / 测量 / IP 查询</title>
 <style>
   /* ========== 1. 设计变量（浅色 / 深色自动切换） ========== */
@@ -471,7 +479,7 @@
 <footer>
   单文件静态网站 · 原生 HTML / CSS / JavaScript · 无需服务器<br>
   数据只在本机浏览器计算，不上传、不追踪。<br>
-  <span style="opacity:.7">版本 v2 · 2026-11-01（含游戏 / 测量 / IP 查询）</span>
+  <span style="opacity:.7">版本 v3 · 2026-11-01（PWA 可安装 / 离线可用）</span>
 </footer>
 
 <script>
@@ -1560,6 +1568,14 @@ var Store = {
     else start();
   });
 })();
+</script>
+<script>
+// 注册 Service Worker：让浏览器把它当作可安装的 PWA，并提供离线兜底
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () { /* 本地双击打开时会失败，忽略即可 */ });
+  });
+}
 </script>
 </body>
 </html>
