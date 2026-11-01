@@ -63,9 +63,30 @@
 
 ## 做成 Android App
 
-### 已打包版本 v1.0.0（2026-11-01）
+### 已打包版本 v1.1.0（离线版，推荐）
 
-- 安装包：`我的工具箱-v1.0.0.apk`（约 0.95 MB，在上一级目录）
+- 下载地址：https://github.com/t20-j/tangt/releases/latest/download/my-toolbox-offline-v1.1.0.apk
+- Release 页面：https://github.com/t20-j/tangt/releases/tag/v1.1.0
+- 安装包：`我的工具箱-离线版-v1.1.0.apk`（约 2.8 MB，在上一级目录）
+- 形式：**Capacitor**，把整个网站打进 App，**完全离线可用、不依赖浏览器**
+- 包名 `com.t20j.toolbox`，versionCode 2，versionName 1.1.0，minSdk 22，targetSdk 34
+- 已声明麦克风权限（`RECORD_AUDIO`），分贝仪可用
+- 与 v1.0.0（TWA）的区别：
+
+  | | v1.0.0 TWA | v1.1.0 离线版 |
+  |---|---|---|
+  | 网页来源 | 线上加载 | 打包在 App 内 |
+  | 需要联网 | 首次需要 | 不需要 |
+  | 依赖 Chrome | 是 | 否 |
+  | 体积 | 0.98 MB | 2.8 MB |
+  | 改网页生效 | 自动 | 需重新打包 |
+
+- 构建工程：`%LOCALAPPDATA%\appbuild\cap`（源码 `www/index.html` 由 `_prepare_cap.mjs` 生成并 `npx cap sync` 同步）
+
+### 已打包版本 v1.0.0（TWA）
+
+- 下载地址：https://github.com/t20-j/tangt/releases/tag/v1.0.0
+- 安装包：`我的工具箱-v1.0.0.apk`（约 0.98 MB，在上一级目录）
 - 包名 `com.t20j.toolbox`，versionCode 1，minSdk 24（Android 7.0+），targetSdk 36
 - 形式：TWA（Trusted Web Activity），原生外壳 + 加载线上网页，**需要联网**
 - 签名：`app-build/android.keystore`，别名 `android`，密码 `toolbox2026`
