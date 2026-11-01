@@ -1,0 +1,19 @@
+{
+  "name": "我的工具箱 · 单位换算 / 小游戏 / 测量 / IP 查询",
+  "short_name": "我的工具箱",
+  "description": "纯前端多功能工具箱：单位换算、密码生成、文本工具、数独、舒尔特方格、五子棋、屏幕尺子、分贝仪、IP 查询。全部在本地浏览器计算。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f6fb",
+  "theme_color": "#4f6ef7",
+  "categories": ["utilities", "productivity", "games"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
