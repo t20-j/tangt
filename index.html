@@ -3,266 +3,1482 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>我的工具站 · 零基础第一个项目</title>
+<meta name="description" content="一个纯前端的多功能工具箱：单位换算、密码生成、文本工具，数独、舒尔特方格、五子棋，屏幕尺子、分贝仪，以及 IP 地址查询入口。">
+<title>我的工具箱 · 单位换算 / 密码生成 / 小游戏 / 测量 / IP 查询</title>
 <style>
+  /* ========== 1. 设计变量（浅色 / 深色自动切换） ========== */
   :root{
-    --bg:#f4f6fb; --card:#ffffff; --text:#1b2333; --muted:#6b7488;
-    --border:#e6eaf3; --accent:#4f6ef7; --accent-weak:#eef1ff;
-    --shadow:0 6px 24px rgba(31,45,80,.06); --radius:16px;
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --text:#1b2333;
+    --muted:#6b7488;
+    --border:#e6eaf3;
+    --accent:#4f6ef7;
+    --accent-weak:#eef1ff;
+    --danger:#e5484d;
+    --success:#22a06b;
+    --warn:#f5a524;
+    --shadow:0 6px 24px rgba(31,45,80,.06);
+    --radius:16px;
   }
   @media (prefers-color-scheme: dark){
-    :root{ --bg:#0e1320; --card:#161d2c; --text:#e9edf6; --muted:#909bb0;
-           --border:#242e42; --accent:#7c92ff; --accent-weak:#1c2540;
-           --shadow:0 6px 24px rgba(0,0,0,.35); }
+    :root{
+      --bg:#0e1320;
+      --card:#161d2c;
+      --text:#e9edf6;
+      --muted:#909bb0;
+      --border:#242e42;
+      --accent:#7c92ff;
+      --accent-weak:#1c2540;
+      --danger:#ff6b6f;
+      --success:#3ecf8e;
+      --warn:#ffc44d;
+      --shadow:0 6px 24px rgba(0,0,0,.35);
+    }
   }
-  *{ box-sizing:border-box; }
+
+  /* ========== 2. 基础样式 ========== */
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{
-    margin:0; background:var(--bg); color:var(--text); min-height:100vh;
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    padding-bottom:48px;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;
   }
-  header{ max-width:1100px; margin:0 auto; padding:56px 24px 8px; }
-  h1{ margin:0 0 10px; font-size:clamp(26px,4vw,40px); letter-spacing:-.5px; }
-  .sub{ color:var(--muted); font-size:15px; line-height:1.7; margin:0; }
-  main{
-    max-width:1100px; margin:0 auto; padding:24px; display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:20px; align-items:start;
+  a{color:var(--accent)}
+
+  /* ========== 3. 顶部导航 ========== */
+  .topnav{
+    position:sticky; top:0; z-index:50;
+    background:var(--bg);
+    border-bottom:1px solid var(--border);
   }
+  .topnav .inner{
+    max-width:1100px; margin:0 auto; padding:10px 24px;
+    display:flex; gap:8px; overflow-x:auto;
+  }
+  .topnav a{
+    flex:0 0 auto;
+    padding:7px 14px; border-radius:999px;
+    text-decoration:none; color:var(--muted);
+    font-size:13px; font-weight:600;
+    transition:background .15s,color .15s;
+  }
+  .topnav a:hover{background:var(--accent-weak); color:var(--accent)}
+
+  /* ========== 4. 页头与分区 ========== */
+  header.top{max-width:1100px; margin:0 auto; padding:44px 24px 8px}
+  header.top h1{margin:0 0 10px; font-size:clamp(26px,4vw,40px); letter-spacing:-.5px}
+  .sub{color:var(--muted); font-size:15px; line-height:1.7; margin:0}
+  .section{max-width:1100px; margin:0 auto; padding:26px 24px 10px; scroll-margin-top:64px}
+  .section > h2{margin:0 0 4px; font-size:21px; letter-spacing:-.3px}
+  .section > .desc{margin:0 0 18px; color:var(--muted); font-size:13px}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:20px;
+    align-items:start;
+  }
+
+  /* ========== 5. 卡片与表单 ========== */
   .card{
-    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-    padding:22px; box-shadow:var(--shadow);
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+    box-shadow:var(--shadow);
+    min-width:0;
   }
-  .card h2{ margin:0 0 4px; font-size:17px; }
-  .card .hint{ margin:0 0 16px; color:var(--muted); font-size:13px; }
-  .field{ display:flex; flex-direction:column; gap:6px; flex:1; min-width:88px; }
-  label{ font-size:12px; color:var(--muted); }
-  input, select, textarea, button{ font-family:inherit; font-size:14px; color:var(--text); }
-  input[type=number], input[type=text], select, textarea{
-    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
-    background:var(--bg); outline:none; transition:border-color .15s, box-shadow .15s;
+  .card h3{margin:0 0 4px; font-size:16px}
+  .card .hint{margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.6}
+  .field{display:flex; flex-direction:column; gap:6px; flex:1; min-width:88px}
+  label{font-size:12px; color:var(--muted)}
+  input,select,textarea,button{font-family:inherit; font-size:14px; color:var(--text)}
+  input[type=number],input[type=text],select,textarea{
+    width:100%; padding:9px 12px;
+    border:1px solid var(--border); border-radius:10px;
+    background:var(--bg); outline:none;
+    transition:border-color .15s,box-shadow .15s;
   }
-  input:focus, select:focus, textarea:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-weak); }
-  .row{ display:flex; gap:10px; margin-bottom:12px; }
+  input:focus,select:focus,textarea:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-weak);
+  }
+  textarea{resize:vertical; min-height:110px; line-height:1.6}
+  .row{display:flex; gap:10px; margin-bottom:12px}
   button{
-    border:0; border-radius:10px; padding:10px 16px; cursor:pointer;
-    background:var(--accent); color:#fff; font-weight:600; transition:opacity .15s, transform .05s;
+    border:0; border-radius:10px; padding:9px 16px;
+    cursor:pointer; background:var(--accent); color:#fff;
+    font-weight:600; transition:opacity .15s,transform .05s;
   }
-  button:hover{ opacity:.9; }
-  button:active{ transform:translateY(1px); }
-  button.ghost{ background:var(--accent-weak); color:var(--accent); }
+  button:hover{opacity:.9}
+  button:active{transform:translateY(1px)}
+  button.ghost{background:var(--accent-weak); color:var(--accent)}
+  button:disabled{cursor:not-allowed; opacity:.6}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .checkbox-row{display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 12px}
+  .checkbox-row label{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer}
   .result{
-    margin-top:12px; padding:14px; border-radius:12px; background:var(--accent-weak);
-    color:var(--accent); font-size:20px; font-weight:700; text-align:center; word-break:break-all;
+    margin-top:10px; padding:12px; border-radius:12px;
+    background:var(--accent-weak); color:var(--accent);
+    font-size:19px; font-weight:700; text-align:center; word-break:break-all;
   }
-  .checkbox-row{ display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 14px; }
-  .checkbox-row label{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer; }
-  .textarea-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .stat{ display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px; }
-  .stat:last-child{ border-bottom:0; }
-  footer{ max-width:1100px; margin:0 auto; padding:8px 24px 48px; color:var(--muted); font-size:13px; text-align:center; }
+  .stats{margin-top:12px}
+  .stat{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed var(--border); font-size:13px}
+  .stat:last-child{border-bottom:0}
+  .stat b{color:var(--text)}
+
+  /* ========== 6. 游戏通用 ========== */
+  .game-meta{
+    display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-top:10px; font-size:13px; color:var(--muted);
+  }
+  .game-meta b{color:var(--text)}
+  .game-msg{min-height:20px; margin-top:8px; font-size:13px; color:var(--success); text-align:center; font-weight:600}
+
+  /* 数独 */
+  .sudoku{
+    display:grid; grid-template-columns:repeat(9,1fr);
+    width:100%; max-width:360px; margin:0 auto;
+    border:2px solid var(--text); border-radius:8px;
+    overflow:hidden; background:var(--card);
+  }
+  .sudoku .cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border:0; border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+    background:transparent; color:var(--text); padding:0; border-radius:0;
+    font-size:clamp(14px,3.4vw,19px); font-weight:600; cursor:pointer;
+  }
+  .sudoku .cell:hover{background:var(--accent-weak)}
+  .sudoku .cell:active{transform:none}
+  .sudoku .cell.br{border-right:2px solid var(--text)}
+  .sudoku .cell.bb{border-bottom:2px solid var(--text)}
+  .sudoku .cell.last-col{border-right:0}
+  .sudoku .cell.last-row{border-bottom:0}
+  .sudoku .cell.user{color:var(--accent)}
+  .sudoku .cell.sel{background:var(--accent-weak)}
+  .sudoku .cell.bad{color:var(--danger); background:rgba(229,72,77,.12)}
+  .pad{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:12px auto 0; max-width:360px}
+  .pad button{padding:8px 0; background:var(--accent-weak); color:var(--accent); font-size:15px}
+
+  /* 舒尔特方格 */
+  .schulte{display:grid; gap:6px; max-width:360px; margin:0 auto}
+  .schulte button{
+    aspect-ratio:1; padding:0; font-size:clamp(13px,2.8vw,18px); font-weight:700;
+    background:var(--accent-weak); color:var(--accent);
+  }
+  .schulte button.done{opacity:.18; pointer-events:none}
+  .schulte button.wrong{background:var(--danger); color:#fff}
+
+  /* 五子棋 */
+  #gomokuCanvas{
+    display:block; width:100%; max-width:520px; height:auto;
+    margin:0 auto; border-radius:12px; cursor:pointer;
+    touch-action:manipulation;
+  }
+
+  /* ========== 7. 测量工具 ========== */
+  /* 用 outline 而不是 border：边框会占宽度，导致刻度与校准产生 0.5% 误差 */
+  #rulerCanvas{display:block; width:100%; border-radius:10px; border:0; outline:1px solid var(--border); outline-offset:-1px; background:var(--card)}
+  .cal-wrap{overflow-x:auto; padding:4px 0}
+  #calCard{
+    height:0; border:2px dashed var(--accent); border-radius:8px;
+    margin:10px auto; background:rgba(79,110,247,.06);
+  }
+  .ruler-info{text-align:center; font-size:13px; color:var(--muted); margin-top:8px}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:6px 0}
+  .db-value{display:flex; align-items:baseline; justify-content:center; gap:6px; margin:6px 0 2px}
+  .db-value b{font-size:46px; letter-spacing:-2px; line-height:1}
+  .db-value span{color:var(--muted); font-size:14px}
+  .db-bar-wrap{height:14px; background:var(--bg); border:1px solid var(--border); border-radius:999px; overflow:hidden; margin:12px 0}
+  #dbBar{height:100%; width:0; background:var(--success); transition:width .08s linear}
+  .db-note{font-size:12px; color:var(--muted); text-align:center; margin-top:10px}
+
+  /* ========== 8. 外链卡片 ========== */
+  .link-list{display:flex; flex-direction:column; gap:10px}
+  .link-card{
+    display:flex; flex-direction:column; gap:3px;
+    padding:14px 16px; border-radius:12px; text-decoration:none;
+    border:1px solid var(--border); background:var(--bg);
+    transition:border-color .15s,transform .1s;
+  }
+  .link-card:hover{border-color:var(--accent); transform:translateY(-1px)}
+  .link-card strong{color:var(--text); font-size:14px}
+  .link-card span{color:var(--muted); font-size:12px}
+
+  /* ========== 9. 页脚与响应式 ========== */
+  footer{max-width:1100px; margin:30px auto 0; padding:0 24px; color:var(--muted); font-size:13px; text-align:center; line-height:1.8}
+  @media (max-width:520px){
+    .row{flex-wrap:wrap}
+    .topnav .inner{padding:8px 14px}
+    .section,header.top{padding-left:14px; padding-right:14px}
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🧰 我的工具站</h1>
-  <p class="sub">零基础第一个项目 · 纯 HTML + CSS + JavaScript，单文件，无需安装任何东西。</p>
+<!-- ===== 顶部导航 ===== -->
+<nav class="topnav">
+  <div class="inner">
+    <a href="#tools">🧰 工具</a>
+    <a href="#games">🎮 游戏</a>
+    <a href="#measure">📐 测量</a>
+    <a href="#network">🌐 网络</a>
+  </div>
+</nav>
+
+<header class="top">
+  <h1>我的工具箱</h1>
+  <p class="sub">常用计算、小游戏、屏幕测量与网络查询，全部浏览器本地完成，不上传任何数据。</p>
 </header>
 
-<main>
+<!-- ===== 工具 ===== -->
+<section class="section" id="tools">
+  <h2>🧰 实用工具</h2>
+  <p class="desc">纯前端运算，断网也能用。</p>
 
-  <!-- 工具 1：单位换算 -->
-  <section class="card">
-    <h2>📏 单位换算</h2>
-    <p class="hint">输入数值，自动换算</p>
-    <div class="row">
-      <div class="field">
-        <label for="cat">类别</label>
-        <select id="cat">
-          <option>长度</option>
-          <option>重量</option>
-          <option>温度</option>
-        </select>
+  <div class="grid">
+
+    <!-- 单位换算 -->
+    <div class="card">
+      <h3>单位换算</h3>
+      <p class="hint">长度、重量、温度三种常用换算。</p>
+      <div class="row">
+        <div class="field">
+          <label for="cat">单位类别</label>
+          <select id="cat" aria-label="单位类别">
+            <option value="长度">长度</option>
+            <option value="重量">重量</option>
+            <option value="温度">温度</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="val">数值</label>
+          <input id="val" type="number" value="1" step="any">
+        </div>
+        <div class="field">
+          <label for="from">从</label>
+          <select id="from"></select>
+        </div>
+        <div class="field">
+          <label for="to">到</label>
+          <select id="to"></select>
+        </div>
+      </div>
+      <div class="result" id="unitResult">1</div>
+    </div>
+
+    <!-- 密码生成器 -->
+    <div class="card">
+      <h3>🔐 密码生成器</h3>
+      <p class="hint">用浏览器的加密安全随机数生成，密码只存在当前页面。</p>
+      <div class="row">
+        <div class="field">
+          <label for="len">密码长度</label>
+          <input id="len" type="number" min="4" max="64" value="16">
+        </div>
+      </div>
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="cbUpper" checked> 大写字母</label>
+        <label><input type="checkbox" id="cbLower" checked> 小写字母</label>
+        <label><input type="checkbox" id="cbDigit" checked> 数字</label>
+        <label><input type="checkbox" id="cbSymbol" checked> 符号</label>
+      </div>
+      <div class="actions">
+        <button id="genBtn" type="button">生成密码</button>
+        <button id="copyBtn" class="ghost" type="button">复制</button>
+      </div>
+      <div class="result" id="pwdResult">点击"生成密码"</div>
+    </div>
+
+    <!-- 文本工具 -->
+    <div class="card">
+      <h3>📝 文本工具</h3>
+      <p class="hint">统计字数、单词数、行数，或一键转换大小写。</p>
+      <textarea id="textArea" placeholder="在这里粘贴或输入文字……" aria-label="文本输入"></textarea>
+      <div class="actions">
+        <button id="upperBtn" class="ghost" type="button">转大写</button>
+        <button id="lowerBtn" class="ghost" type="button">转小写</button>
+        <button id="clearBtn" class="ghost" type="button">清空</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>字符数</span><b id="charCount">0</b></div>
+        <div class="stat"><span>单词数</span><b id="wordCount">0</b></div>
+        <div class="stat"><span>行数</span><b id="lineCount">0</b></div>
       </div>
     </div>
-    <div class="row">
-      <div class="field"><label for="val">数值</label><input id="val" type="number" value="1" step="any"></div>
-      <div class="field"><label for="from">从</label><select id="from"></select></div>
-      <div class="field"><label for="to">到</label><select id="to"></select></div>
-    </div>
-    <div class="result" id="unitResult">1</div>
-  </section>
 
-  <!-- 工具 2：密码生成器 -->
-  <section class="card">
-    <h2>🔑 密码生成器</h2>
-    <p class="hint">在本地生成，不会上传到任何服务器</p>
-    <div class="row">
-      <div class="field">
-        <label for="len">长度：<span id="lenVal">16</span></label>
-        <input id="len" type="range" min="6" max="40" value="16">
+  </div>
+</section>
+
+<!-- ===== 游戏 ===== -->
+<section class="section" id="games">
+  <h2>🎮 小游戏</h2>
+  <p class="desc">锻炼专注力和逻辑，全部离线可玩。</p>
+
+  <div class="grid">
+
+    <!-- 数独 -->
+    <div class="card">
+      <h3>数独 Sudoku</h3>
+      <p class="hint">每行、每列、每个 3×3 宫内 1–9 各出现一次。点击格子后用下方数字键或键盘 1–9 填入。</p>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field">
+          <label for="sudokuDiff">难度</label>
+          <select id="sudokuDiff" aria-label="数独难度">
+            <option value="easy">简单</option>
+            <option value="medium" selected>中等</option>
+            <option value="hard">困难</option>
+          </select>
+        </div>
+      </div>
+      <div class="sudoku" id="sudokuBoard"></div>
+      <div class="pad" id="sudokuPad"></div>
+      <div class="game-meta">
+        <span>⏱ <b id="sudokuTimer">00:00</b></span>
+        <span>红色 = 数字冲突</span>
+      </div>
+      <div class="actions">
+        <button id="sudokuNew" type="button">新一局</button>
+        <button id="sudokuHint" class="ghost" type="button">提示一格</button>
+        <button id="sudokuErase" class="ghost" type="button">擦除</button>
+      </div>
+      <div class="game-msg" id="sudokuMsg"></div>
+    </div>
+
+    <!-- 舒尔特方格 -->
+    <div class="card">
+      <h3>舒尔特方格</h3>
+      <p class="hint">从 1 开始按顺序点击到最后一个数字，用时越短注意力越集中。第一次点击才开始计时。</p>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field">
+          <label for="schulteSize">阶数</label>
+          <select id="schulteSize" aria-label="方格阶数">
+            <option value="3">3 × 3（9 格）</option>
+            <option value="4">4 × 4（16 格）</option>
+            <option value="5" selected>5 × 5（25 格）</option>
+            <option value="6">6 × 6（36 格）</option>
+          </select>
+        </div>
+      </div>
+      <div class="schulte" id="schulteGrid"></div>
+      <div class="game-meta">
+        <span>用时：<b id="schulteTime">0.00s</b></span>
+        <span>最佳：<b id="schulteBest">—</b></span>
+      </div>
+      <div class="actions">
+        <button id="schulteNew" type="button">重新打乱</button>
       </div>
     </div>
-    <div class="checkbox-row">
-      <label><input type="checkbox" id="cbUpper" checked> 大写字母</label>
-      <label><input type="checkbox" id="cbLower" checked> 小写字母</label>
-      <label><input type="checkbox" id="cbDigit" checked> 数字</label>
-      <label><input type="checkbox" id="cbSymbol"> 符号</label>
-    </div>
-    <div class="row">
-      <button id="genBtn">生成密码</button>
-      <button class="ghost" id="copyBtn">复制</button>
-    </div>
-    <div class="result" id="pwdResult">点击「生成密码」</div>
-  </section>
 
-  <!-- 工具 3：文本工具 -->
-  <section class="card">
-    <h2>📝 文本工具</h2>
-    <p class="hint">实时统计字数</p>
-    <textarea id="textArea" rows="4" placeholder="在这里粘贴文字…"></textarea>
-    <div class="textarea-row">
-      <button class="ghost" id="upperBtn">转大写</button>
-      <button class="ghost" id="lowerBtn">转小写</button>
-      <button class="ghost" id="clearBtn">清空</button>
+    <!-- 五子棋 -->
+    <div class="card">
+      <h3>五子棋</h3>
+      <p class="hint">黑棋先行，横、竖、斜任意方向连成 5 子获胜。支持双人对战和人机对战。</p>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field">
+          <label for="gomokuMode">模式</label>
+          <select id="gomokuMode" aria-label="五子棋模式">
+            <option value="pvp">双人对战</option>
+            <option value="ai" selected>人机对战（你执黑）</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="gomokuCanvas" width="560" height="560" aria-label="五子棋棋盘"></canvas>
+      <div class="game-meta">
+        <span id="gomokuStatus">⚫ 黑棋回合</span>
+        <span>点击交叉点落子</span>
+      </div>
+      <div class="actions">
+        <button id="gomokuRestart" type="button">重新开始</button>
+        <button id="gomokuUndo" class="ghost" type="button">悔棋</button>
+      </div>
     </div>
-    <div style="margin-top:12px">
-      <div class="stat"><span>字符数</span><b id="charCount">0</b></div>
-      <div class="stat"><span>单词数</span><b id="wordCount">0</b></div>
-      <div class="stat"><span>行数</span><b id="lineCount">0</b></div>
+
+  </div>
+</section>
+
+<!-- ===== 测量 ===== -->
+<section class="section" id="measure">
+  <h2>📐 测量工具</h2>
+  <p class="desc">需要用真实物体校准一次，校准结果会保存在本机浏览器里。</p>
+
+  <div class="grid">
+
+    <!-- 屏幕尺子 -->
+    <div class="card">
+      <h3>屏幕尺子（真实尺寸）</h3>
+      <p class="hint">先用一张标准银行卡（宽 85.6mm）贴在屏幕上，拖动滑块让下方虚线框刚好等于卡片宽度，尺子就校准好了。</p>
+      <canvas id="rulerCanvas" height="110" aria-label="屏幕尺子"></canvas>
+      <div class="ruler-info" id="rulerInfo">1 cm ≈ 37.8 px</div>
+      <div class="cal-wrap"><div id="calCard"></div></div>
+      <label for="calSlider" style="display:block; text-align:center">卡片宽度校准（当前 <b id="calValue">—</b>）</label>
+      <input id="calSlider" type="range" min="120" max="700" value="323" aria-label="校准滑块">
+      <p class="db-note">上方刻度为英寸（1/16 细分），下方刻度为厘米（毫米细分）。</p>
     </div>
-  </section>
 
-</main>
+    <!-- 分贝仪 -->
+    <div class="card">
+      <h3>🔊 分贝仪（噪声计）</h3>
+      <p class="hint">调用麦克风估算环境音量。手机与电脑麦克风灵敏度不同，读数仅供参考，不能作为专业测量设备。</p>
+      <div class="db-value"><b id="dbValue">--</b><span>dB</span></div>
+      <div class="db-bar-wrap"><div id="dbBar"></div></div>
+      <div class="game-meta">
+        <span>峰值：<b id="dbPeak">0.0</b> dB</span>
+        <span id="dbStatus">未开始</span>
+      </div>
+      <div class="actions">
+        <button id="dbStart" type="button">开始测量</button>
+      </div>
+      <label for="dbOffset" style="display:block; margin-top:14px">校准偏差（<b id="dbOffsetVal">0</b> dB）</label>
+      <input id="dbOffset" type="range" min="-30" max="30" value="0" step="1" aria-label="分贝校准">
+      <p class="db-note">必须在 https 或 localhost 下才能使用麦克风；直接双击本地文件打开时可能无法录音。</p>
+    </div>
 
-<footer>用浏览器双击打开即可 · 想改配色就改 :root 里的 --accent</footer>
+  </div>
+</section>
+
+<!-- ===== 网络 ===== -->
+<section class="section" id="network">
+  <h2>🌐 网络查询</h2>
+  <p class="desc">点击卡片在新标签页打开第三方查询服务，本站只提供跳转入口。</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>IP 地址查询</h3>
+      <p class="hint">查看自己的公网 IP、运营商、地理位置，以及浏览器可能泄露的信息。</p>
+      <div class="link-list">
+        <a class="link-card" href="https://ping0.cc/" target="_blank" rel="noopener noreferrer">
+          <strong>ping0.cc ↗</strong>
+          <span>IP 归属地、运营商、原生/广播 IP 检测</span>
+        </a>
+        <a class="link-card" href="https://browserleaks.com/ip" target="_blank" rel="noopener noreferrer">
+          <strong>browserleaks.com/ip ↗</strong>
+          <span>浏览器 IP 泄露与指纹信息检测（英文）</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  单文件静态网站 · 原生 HTML / CSS / JavaScript · 无需服务器<br>
+  数据只在本机浏览器计算，不上传、不追踪。
+</footer>
 
 <script>
-/* ========== 1. 单位换算 ========== */
-const unitData = {
-  长度: { 米:1, 厘米:0.01, 毫米:0.001, 千米:1000, 英寸:0.0254, 英尺:0.3048 },
-  重量: { 克:1, 千克:1000, 斤:500, 磅:453.59237, 盎司:28.349523125 }
-};
-const TEMP_UNITS = ['摄氏度', '华氏度', '开尔文'];
+"use strict";
 
-const catSel = document.getElementById('cat');
-const fromSel = document.getElementById('from');
-const toSel = document.getElementById('to');
-const valInput = document.getElementById('val');
-const unitResult = document.getElementById('unitResult');
-
-function fillUnits() {
-  const cat = catSel.value;
-  const list = cat === '温度' ? TEMP_UNITS : Object.keys(unitData[cat]);
-  fromSel.innerHTML = list.map(u => `<option>${u}</option>`).join('');
-  toSel.innerHTML = list.map(u => `<option>${u}</option>`).join('');
-  toSel.selectedIndex = Math.min(1, list.length - 1);
-  convertUnit();
-}
-
-function toCelsius(v, unit) {
-  if (unit === '华氏度') return (v - 32) * 5 / 9;
-  if (unit === '开尔文') return v - 273.15;
-  return v;
-}
-function fromCelsius(c, unit) {
-  if (unit === '华氏度') return c * 9 / 5 + 32;
-  if (unit === '开尔文') return c + 273.15;
-  return c;
-}
-
-function convertUnit() {
-  const v = parseFloat(valInput.value);
-  if (!isFinite(v)) { unitResult.textContent = '请输入数字'; return; }
-  const cat = catSel.value;
-  let out;
-  if (cat === '温度') {
-    out = fromCelsius(toCelsius(v, fromSel.value), toSel.value);
-  } else {
-    const u = unitData[cat];
-    out = v * u[fromSel.value] / u[toSel.value];
+/* ========== 0. 本地存储小工具（隐私模式可能禁用 localStorage） ========== */
+var Store = {
+  get: function (k) {
+    try { return localStorage.getItem(k); } catch (e) { return null; }
+  },
+  set: function (k, v) {
+    try { localStorage.setItem(k, v); } catch (e) { /* 忽略 */ }
   }
-  const pretty = parseFloat(out.toPrecision(12));
-  unitResult.textContent = `${pretty} ${toSel.value}`;
-}
-
-catSel.addEventListener('change', fillUnits);
-fromSel.addEventListener('change', convertUnit);
-toSel.addEventListener('change', convertUnit);
-valInput.addEventListener('input', convertUnit);
-
-/* ========== 2. 密码生成器 ========== */
-const CHARSETS = {
-  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  lower: 'abcdefghijklmnopqrstuvwxyz',
-  digit: '0123456789',
-  symbol: '!@#$%^&*()-_=+[]{};:,.?'
-};
-const lenInput = document.getElementById('len');
-const lenVal = document.getElementById('lenVal');
-const pwdResult = document.getElementById('pwdResult');
-const cbs = {
-  upper: document.getElementById('cbUpper'),
-  lower: document.getElementById('cbLower'),
-  digit: document.getElementById('cbDigit'),
-  symbol: document.getElementById('cbSymbol')
 };
 
-lenInput.addEventListener('input', () => { lenVal.textContent = lenInput.value; });
+/* ============================================================
+   1. 实用工具
+   ============================================================ */
+(function () {
+  /* ---------- 1.1 单位换算 ---------- */
+  var units = {
+    "长度": { "米": 1, "厘米": 0.01, "毫米": 0.001, "千米": 1000, "英寸": 0.0254, "英尺": 0.3048 },
+    "重量": { "克": 1, "千克": 1000, "斤": 500, "磅": 453.59237, "盎司": 28.349523125 },
+    "温度": { "摄氏度": "C", "华氏度": "F", "开尔文": "K" }
+  };
 
-function randomInt(max) {
-  const buf = new Uint32Array(1);
-  crypto.getRandomValues(buf);
-  return buf[0] % max;
-}
+  var catEl = document.getElementById("cat");
+  var valEl = document.getElementById("val");
+  var fromEl = document.getElementById("from");
+  var toEl = document.getElementById("to");
+  var outEl = document.getElementById("unitResult");
 
-document.getElementById('genBtn').addEventListener('click', () => {
-  let pool = '';
-  for (const key in cbs) if (cbs[key].checked) pool += CHARSETS[key];
-  if (!pool) { pwdResult.textContent = '请至少勾选一种字符'; return; }
-  const n = Number(lenInput.value);
-  let s = '';
-  for (let i = 0; i < n; i++) s += pool[randomInt(pool.length)];
-  pwdResult.textContent = s;
-});
-
-document.getElementById('copyBtn').addEventListener('click', async () => {
-  const txt = pwdResult.textContent;
-  if (!txt || txt.startsWith('点击') || txt.startsWith('请') || txt.startsWith('✅')) return;
-  try {
-    await navigator.clipboard.writeText(txt);
-  } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
+  function optionsFor(cat, selected) {
+    var html = "";
+    var keys = Object.keys(units[cat]);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      html += '<option value="' + k + '"' + (k === selected ? " selected" : "") + ">" + k + "</option>";
+    }
+    return html;
   }
-  pwdResult.textContent = '✅ 已复制';
-  setTimeout(() => { pwdResult.textContent = txt; }, 900);
-});
 
-/* ========== 3. 文本工具 ========== */
-const ta = document.getElementById('textArea');
-const charCount = document.getElementById('charCount');
-const wordCount = document.getElementById('wordCount');
-const lineCount = document.getElementById('lineCount');
+  function refreshUnits() {
+    var cat = catEl.value;
+    fromEl.innerHTML = optionsFor(cat, cat === "长度" ? "米" : cat === "重量" ? "克" : "摄氏度");
+    toEl.innerHTML = optionsFor(cat, cat === "长度" ? "厘米" : cat === "重量" ? "千克" : "华氏度");
+    convert();
+  }
 
-function updateStats() {
-  const t = ta.value;
-  charCount.textContent = t.length;
-  wordCount.textContent = t.trim() ? t.trim().split(/\s+/).length : 0;
-  lineCount.textContent = t ? t.split('\n').length : 0;
-}
-ta.addEventListener('input', updateStats);
-document.getElementById('upperBtn').addEventListener('click', () => { ta.value = ta.value.toUpperCase(); updateStats(); });
-document.getElementById('lowerBtn').addEventListener('click', () => { ta.value = ta.value.toLowerCase(); updateStats(); });
-document.getElementById('clearBtn').addEventListener('click', () => { ta.value = ''; updateStats(); });
+  function toCelsius(v, unit) {
+    if (unit === "摄氏度") return v;
+    if (unit === "华氏度") return (v - 32) * 5 / 9;
+    return v - 273.15;
+  }
+  function fromCelsius(c, unit) {
+    if (unit === "摄氏度") return c;
+    if (unit === "华氏度") return c * 9 / 5 + 32;
+    return c + 273.15;
+  }
 
-/* ========== 初始化 ========== */
-fillUnits();
-updateStats();
+  function convert() {
+    var v = parseFloat(valEl.value);
+    if (!isFinite(v)) { outEl.textContent = "请输入数字"; return; }
+    var cat = catEl.value;
+    var out;
+    if (cat === "温度") {
+      out = fromCelsius(toCelsius(v, fromEl.value), toEl.value);
+    } else {
+      out = v * units[cat][fromEl.value] / units[cat][toEl.value];
+    }
+    out = Math.round(out * 1e6) / 1e6;
+    outEl.textContent = out + " " + toEl.value;
+  }
+
+  catEl.addEventListener("change", refreshUnits);
+  fromEl.addEventListener("change", convert);
+  toEl.addEventListener("change", convert);
+  valEl.addEventListener("input", convert);
+  refreshUnits();
+
+  /* ---------- 1.2 密码生成器 ---------- */
+  var lenEl = document.getElementById("len");
+  var genBtn = document.getElementById("genBtn");
+  var copyBtn = document.getElementById("copyBtn");
+  var pwdEl = document.getElementById("pwdResult");
+  var cbUpper = document.getElementById("cbUpper");
+  var cbLower = document.getElementById("cbLower");
+  var cbDigit = document.getElementById("cbDigit");
+  var cbSymbol = document.getElementById("cbSymbol");
+
+  var UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  var LOWER = "abcdefghijklmnopqrstuvwxyz";
+  var DIGIT = "0123456789";
+  var SYMBOL = "!@#$%^&*()-_=+[]{};:,.?/~";
+  var lastPwd = "";
+
+  function randomInt(max) {
+    var buf = new Uint32Array(1);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(buf);
+      return buf[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+
+  function generate() {
+    var pool = "";
+    if (cbUpper.checked) pool += UPPER;
+    if (cbLower.checked) pool += LOWER;
+    if (cbDigit.checked) pool += DIGIT;
+    if (cbSymbol.checked) pool += SYMBOL;
+    if (!pool) { pwdEl.textContent = "请至少勾选一种字符"; lastPwd = ""; return; }
+
+    var len = parseInt(lenEl.value, 10);
+    if (!isFinite(len)) len = 16;
+    len = Math.max(4, Math.min(64, len));
+
+    var required = [];
+    if (cbUpper.checked) required.push(UPPER);
+    if (cbLower.checked) required.push(LOWER);
+    if (cbDigit.checked) required.push(DIGIT);
+    if (cbSymbol.checked) required.push(SYMBOL);
+
+    var chars = [];
+    for (var i = 0; i < required.length && chars.length < len; i++) {
+      chars.push(required[i][randomInt(required[i].length)]);
+    }
+    while (chars.length < len) {
+      chars.push(pool[randomInt(pool.length)]);
+    }
+    for (var j = chars.length - 1; j > 0; j--) {
+      var k = randomInt(j + 1);
+      var t = chars[j]; chars[j] = chars[k]; chars[k] = t;
+    }
+    lastPwd = chars.join("");
+    pwdEl.textContent = lastPwd;
+  }
+
+  genBtn.addEventListener("click", generate);
+
+  copyBtn.addEventListener("click", function () {
+    if (!lastPwd) { pwdEl.textContent = "请先生成密码"; return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastPwd).then(function () {
+        copyBtn.textContent = "已复制 ✓";
+        setTimeout(function () { copyBtn.textContent = "复制"; }, 1200);
+      }, function () {
+        pwdEl.textContent = "复制失败，请手动选中";
+      });
+    } else {
+      pwdEl.textContent = "当前浏览器不支持自动复制";
+    }
+  });
+
+  /* ---------- 1.3 文本工具 ---------- */
+  var area = document.getElementById("textArea");
+  var charEl = document.getElementById("charCount");
+  var wordEl = document.getElementById("wordCount");
+  var lineEl = document.getElementById("lineCount");
+
+  function countText() {
+    var s = area.value;
+    charEl.textContent = String(s.length);
+    var words = s.trim() ? s.trim().split(/\s+/).length : 0;
+    wordEl.textContent = String(words);
+    lineEl.textContent = String(s ? s.split(/\n/).length : 0);
+  }
+
+  area.addEventListener("input", countText);
+  document.getElementById("upperBtn").addEventListener("click", function () {
+    area.value = area.value.toUpperCase(); countText();
+  });
+  document.getElementById("lowerBtn").addEventListener("click", function () {
+    area.value = area.value.toLowerCase(); countText();
+  });
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    area.value = ""; countText();
+  });
+  countText();
+})();
+
+/* ============================================================
+   2. 数独
+   ============================================================ */
+(function () {
+  var boardEl = document.getElementById("sudokuBoard");
+  var padEl = document.getElementById("sudokuPad");
+  var diffEl = document.getElementById("sudokuDiff");
+  var timerEl = document.getElementById("sudokuTimer");
+  var msgEl = document.getElementById("sudokuMsg");
+  if (!boardEl) return;
+
+  var solution = new Array(81).fill(0);
+  var grid = new Array(81).fill(0);
+  var given = new Array(81).fill(false);
+  var selected = -1;
+  var finished = false;
+  var startTs = 0;
+  var timerId = null;
+
+  function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function isValid(g, idx, v) {
+    var r = Math.floor(idx / 9), c = idx % 9;
+    for (var k = 0; k < 9; k++) {
+      if (g[r * 9 + k] === v) return false;
+      if (g[k * 9 + c] === v) return false;
+    }
+    var br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (var a = 0; a < 3; a++) {
+      for (var b = 0; b < 3; b++) {
+        if (g[(br + a) * 9 + (bc + b)] === v) return false;
+      }
+    }
+    return true;
+  }
+
+  function indexOfZero(g) {
+    for (var i = 0; i < 81; i++) if (g[i] === 0) return i;
+    return -1;
+  }
+
+  // 随机填满一个合法完整盘
+  function fillRandom(g) {
+    var i = indexOfZero(g);
+    if (i === -1) return true;
+    var nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    for (var k = 0; k < 9; k++) {
+      var v = nums[k];
+      if (isValid(g, i, v)) {
+        g[i] = v;
+        if (fillRandom(g)) return true;
+        g[i] = 0;
+      }
+    }
+    return false;
+  }
+
+  // 数解的数量，最多数到 limit 个（用于判断唯一解）
+  function countSolutions(g, limit) {
+    var count = 0;
+    function dfs() {
+      if (count >= limit) return;
+      var i = indexOfZero(g);
+      if (i === -1) { count++; return; }
+      for (var v = 1; v <= 9; v++) {
+        if (isValid(g, i, v)) {
+          g[i] = v;
+          dfs();
+          g[i] = 0;
+          if (count >= limit) return;
+        }
+      }
+    }
+    dfs();
+    return count;
+  }
+
+  function makePuzzle(level) {
+    var full = new Array(81).fill(0);
+    fillRandom(full);
+
+    var puzzle = full.slice();
+    var removeTarget = level === "easy" ? 38 : level === "hard" ? 52 : 46;
+    var order = shuffle(Array.from({ length: 81 }, function (_, i) { return i; }));
+    var removed = 0;
+
+    for (var k = 0; k < order.length && removed < removeTarget; k++) {
+      var pos = order[k];
+      var backup = puzzle[pos];
+      puzzle[pos] = 0;
+      if (countSolutions(puzzle.slice(), 2) !== 1) {
+        puzzle[pos] = backup;
+      } else {
+        removed++;
+      }
+    }
+    return { puzzle: puzzle, solution: full };
+  }
+
+  function fmtTime(ms) {
+    var s = Math.floor(ms / 1000);
+    var m = Math.floor(s / 60);
+    var ss = s % 60;
+    return (m < 10 ? "0" + m : String(m)) + ":" + (ss < 10 ? "0" + ss : String(ss));
+  }
+
+  function conflicts(g) {
+    var bad = {};
+
+    function markGroup(group) {
+      var seen = {};
+      for (var k = 0; k < group.length; k++) {
+        var idx = group[k];
+        var v = g[idx];
+        if (!v) continue;
+        if (!seen[v]) seen[v] = [];
+        seen[v].push(idx);
+      }
+      for (var key in seen) {
+        if (seen[key].length > 1) {
+          for (var m = 0; m < seen[key].length; m++) bad[seen[key][m]] = true;
+        }
+      }
+    }
+
+    for (var r = 0; r < 9; r++) {
+      var row = [], col = [];
+      for (var c = 0; c < 9; c++) { row.push(r * 9 + c); col.push(c * 9 + r); }
+      markGroup(row);
+      markGroup(col);
+    }
+    for (var br = 0; br < 3; br++) {
+      for (var bc = 0; bc < 3; bc++) {
+        var box = [];
+        for (var a = 0; a < 3; a++) {
+          for (var b = 0; b < 3; b++) box.push((br * 3 + a) * 9 + (bc * 3 + b));
+        }
+        markGroup(box);
+      }
+    }
+    return bad;
+  }
+
+  function render() {
+    var bad = conflicts(grid);
+    var html = "";
+    for (var i = 0; i < 81; i++) {
+      var r = Math.floor(i / 9), c = i % 9;
+      var cls = "cell";
+      if (given[i]) cls += " given";
+      else if (grid[i]) cls += " user";
+      if (i === selected) cls += " sel";
+      if (bad[i]) cls += " bad";
+      if (c === 2 || c === 5) cls += " br";
+      if (r === 2 || r === 5) cls += " bb";
+      if (c === 8) cls += " last-col";
+      if (r === 8) cls += " last-row";
+      html += '<button type="button" class="' + cls + '" data-i="' + i + '">' +
+              (grid[i] ? grid[i] : "") + "</button>";
+    }
+    boardEl.innerHTML = html;
+  }
+
+  function checkDone() {
+    if (indexOfZero(grid) !== -1) return;
+    var bad = conflicts(grid);
+    for (var key in bad) { if (bad[key]) return; }
+    finished = true;
+    if (timerId) clearInterval(timerId);
+    msgEl.textContent = "🎉 完成！用时 " + fmtTime(Date.now() - startTs);
+  }
+
+  function setValue(v) {
+    if (selected < 0 || finished) return;
+    if (given[selected]) return;
+    grid[selected] = grid[selected] === v ? 0 : v;
+    render();
+    checkDone();
+  }
+
+  function newGame() {
+    if (timerId) clearInterval(timerId);
+    finished = false;
+    selected = -1;
+    msgEl.textContent = "生成中…";
+    timerEl.textContent = "00:00";
+    setTimeout(function () {
+      var res = makePuzzle(diffEl.value);
+      solution = res.solution;
+      grid = res.puzzle.slice();
+      given = grid.map(function (v) { return v !== 0; });
+      render();
+      msgEl.textContent = "";
+      startTs = Date.now();
+      timerId = setInterval(function () {
+        if (!finished) timerEl.textContent = fmtTime(Date.now() - startTs);
+      }, 500);
+    }, 20);
+  }
+
+  function hint() {
+    if (finished) return;
+    var idx = selected;
+    if (idx < 0 || grid[idx] !== 0) {
+      var empties = [];
+      for (var k = 0; k < 81; k++) if (!grid[k]) empties.push(k);
+      if (!empties.length) return;
+      idx = empties[Math.floor(Math.random() * empties.length)];
+    }
+    grid[idx] = solution[idx];
+    selected = idx;
+    render();
+    checkDone();
+  }
+
+  var padHtml = "";
+  for (var n = 1; n <= 9; n++) {
+    padHtml += '<button type="button" data-n="' + n + '">' + n + "</button>";
+  }
+  padHtml += '<button type="button" data-n="0">擦</button>';
+  padEl.innerHTML = padHtml;
+
+  boardEl.addEventListener("click", function (e) {
+    var cell = e.target.closest ? e.target.closest(".cell") : null;
+    if (!cell) return;
+    selected = Number(cell.getAttribute("data-i"));
+    render();
+  });
+
+  padEl.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("button") : null;
+    if (!btn) return;
+    setValue(Number(btn.getAttribute("data-n")));
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    if (e.key >= "1" && e.key <= "9") { setValue(Number(e.key)); }
+    else if (e.key === "Backspace" || e.key === "Delete" || e.key === "0") { setValue(0); }
+  });
+
+  document.getElementById("sudokuNew").addEventListener("click", newGame);
+  document.getElementById("sudokuHint").addEventListener("click", hint);
+  document.getElementById("sudokuErase").addEventListener("click", function () { setValue(0); });
+  diffEl.addEventListener("change", newGame);
+
+  newGame();
+})();
+
+/* ============================================================
+   3. 舒尔特方格
+   ============================================================ */
+(function () {
+  var gridEl = document.getElementById("schulteGrid");
+  var sizeEl = document.getElementById("schulteSize");
+  var timeEl = document.getElementById("schulteTime");
+  var bestEl = document.getElementById("schulteBest");
+  var newBtn = document.getElementById("schulteNew");
+  if (!gridEl) return;
+
+  var size = 5;
+  var total = 25;
+  var next = 1;
+  var running = false;
+  var startTs = 0;
+  var tickId = null;
+
+  function fmt(sec) { return sec.toFixed(2) + "s"; }
+
+  function build() {
+    if (tickId) clearInterval(tickId);
+    tickId = null;
+
+    size = Number(sizeEl.value);
+    total = size * size;
+    next = 1;
+    running = false;
+    startTs = 0;
+
+    timeEl.textContent = "0.00s";
+    gridEl.style.gridTemplateColumns = "repeat(" + size + ", 1fr)";
+
+    var nums = [];
+    for (var i = 1; i <= total; i++) nums.push(i);
+    for (var j = nums.length - 1; j > 0; j--) {
+      var k = Math.floor(Math.random() * (j + 1));
+      var t = nums[j]; nums[j] = nums[k]; nums[k] = t;
+    }
+
+    gridEl.innerHTML = "";
+    for (var m = 0; m < nums.length; m++) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = String(nums[m]);
+      b.setAttribute("data-n", String(nums[m]));
+      b.addEventListener("click", onCellClick);
+      gridEl.appendChild(b);
+    }
+
+    var best = Store.get("schulte-best-" + size);
+    bestEl.textContent = best ? best + "s" : "—";
+  }
+
+  function onCellClick(e) {
+    var b = e.currentTarget;
+    var val = Number(b.getAttribute("data-n"));
+    if (val !== next) {
+      b.classList.add("wrong");
+      setTimeout(function () { b.classList.remove("wrong"); }, 260);
+      return;
+    }
+    if (!running) {
+      running = true;
+      startTs = performance.now();
+      tickId = setInterval(function () {
+        if (running) timeEl.textContent = fmt((performance.now() - startTs) / 1000);
+      }, 50);
+    }
+    b.classList.add("done");
+    b.disabled = true;
+    next++;
+
+    if (next > total) {
+      running = false;
+      if (tickId) clearInterval(tickId);
+      tickId = null;
+      var sec = (performance.now() - startTs) / 1000;
+      timeEl.textContent = fmt(sec);
+
+      var key = "schulte-best-" + size;
+      var prev = parseFloat(Store.get(key) || "0");
+      if (!prev || sec < prev) {
+        Store.set(key, sec.toFixed(2));
+        bestEl.textContent = sec.toFixed(2) + "s";
+        timeEl.textContent = sec.toFixed(2) + "s 🎉 新纪录";
+      }
+    }
+  }
+
+  newBtn.addEventListener("click", build);
+  sizeEl.addEventListener("change", build);
+  build();
+})();
+
+/* ============================================================
+   4. 五子棋
+   ============================================================ */
+(function () {
+  var canvas = document.getElementById("gomokuCanvas");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var statusEl = document.getElementById("gomokuStatus");
+  var modeEl = document.getElementById("gomokuMode");
+
+  var N = 15;
+  var SIZE = 560;
+  var PAD = 30;
+  var GAP = (SIZE - PAD * 2) / (N - 1);
+  var RAD = GAP * 0.44;
+
+  var board = [];
+  var turn = 1;
+  var over = false;
+  var history = [];
+
+  function inb(r, c) { return r >= 0 && r < N && c >= 0 && c < N; }
+
+  function initBoard() {
+    board = [];
+    for (var r = 0; r < N; r++) {
+      var row = [];
+      for (var c = 0; c < N; c++) row.push(0);
+      board.push(row);
+    }
+  }
+
+  function setupCanvas() {
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function stone(c, r, player) {
+    var x = PAD + c * GAP;
+    var y = PAD + r * GAP;
+    var g = ctx.createRadialGradient(x - RAD * 0.35, y - RAD * 0.35, RAD * 0.1, x, y, RAD);
+    if (player === 1) { g.addColorStop(0, "#777777"); g.addColorStop(1, "#111111"); }
+    else { g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#c9c9c9"); }
+    ctx.beginPath();
+    ctx.arc(x, y, RAD, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,.28)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    ctx.fillStyle = "#e8cb92";
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    ctx.strokeStyle = "rgba(90,60,20,.55)";
+    ctx.lineWidth = 1;
+    for (var i = 0; i < N; i++) {
+      var p = PAD + i * GAP;
+      ctx.beginPath(); ctx.moveTo(PAD, p); ctx.lineTo(SIZE - PAD, p); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p, PAD); ctx.lineTo(p, SIZE - PAD); ctx.stroke();
+    }
+
+    var stars = [[3, 3], [3, 11], [11, 3], [11, 11], [7, 7]];
+    ctx.fillStyle = "rgba(90,60,20,.7)";
+    for (var s = 0; s < stars.length; s++) {
+      ctx.beginPath();
+      ctx.arc(PAD + stars[s][0] * GAP, PAD + stars[s][1] * GAP, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    for (var r = 0; r < N; r++) {
+      for (var c = 0; c < N; c++) {
+        if (board[r][c]) stone(c, r, board[r][c]);
+      }
+    }
+
+    if (history.length) {
+      var last = history[history.length - 1];
+      ctx.strokeStyle = "#e5484d";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(PAD + last.c * GAP, PAD + last.r * GAP, RAD + 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  function won(r, c, p) {
+    var dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
+    for (var k = 0; k < 4; k++) {
+      var dr = dirs[k][0], dc = dirs[k][1];
+      var count = 1;
+      var i = 1;
+      while (inb(r + dr * i, c + dc * i) && board[r + dr * i][c + dc * i] === p) { count++; i++; }
+      i = 1;
+      while (inb(r - dr * i, c - dc * i) && board[r - dr * i][c - dc * i] === p) { count++; i++; }
+      if (count >= 5) return true;
+    }
+    return false;
+  }
+
+  function updateStatus() {
+    if (over) return;
+    if (modeEl.value === "ai" && turn === 2) { statusEl.textContent = "AI 思考中…"; return; }
+    statusEl.textContent = turn === 1 ? "⚫ 黑棋回合" : "⚪ 白棋回合";
+  }
+
+  function place(r, c) {
+    if (over || board[r][c]) return;
+    board[r][c] = turn;
+    var player = turn;
+    history.push({ r: r, c: c, p: player });
+
+    if (won(r, c, player)) {
+      over = true;
+      draw();
+      statusEl.textContent = (player === 1 ? "⚫ 黑棋" : "⚪ 白棋") + "获胜！🎉";
+      return;
+    }
+    if (history.length === N * N) {
+      over = true;
+      draw();
+      statusEl.textContent = "平局";
+      return;
+    }
+
+    turn = 3 - turn;
+    draw();
+    updateStatus();
+
+    if (modeEl.value === "ai" && turn === 2 && !over) {
+      statusEl.textContent = "AI 思考中…";
+      setTimeout(aiMove, 180);
+    }
+  }
+
+  function patternScore(count, open) {
+    if (count >= 5) return 1000000;
+    if (count === 4) return open === 2 ? 100000 : open === 1 ? 10000 : 0;
+    if (count === 3) return open === 2 ? 6000 : open === 1 ? 800 : 0;
+    if (count === 2) return open === 2 ? 400 : open === 1 ? 80 : 0;
+    if (count === 1) return open === 2 ? 20 : open === 1 ? 8 : 0;
+    return 0;
+  }
+
+  function evalPoint(r, c, p) {
+    var score = 0;
+    var dirs = [[1, 0], [0, 1], [1, 1], [1, -1]];
+    for (var k = 0; k < 4; k++) {
+      var dr = dirs[k][0], dc = dirs[k][1];
+      var count = 1, open = 0;
+      var i = 1;
+      while (inb(r + dr * i, c + dc * i) && board[r + dr * i][c + dc * i] === p) { count++; i++; }
+      if (inb(r + dr * i, c + dc * i) && board[r + dr * i][c + dc * i] === 0) open++;
+      i = 1;
+      while (inb(r - dr * i, c - dc * i) && board[r - dr * i][c - dc * i] === p) { count++; i++; }
+      if (inb(r - dr * i, c - dc * i) && board[r - dr * i][c - dc * i] === 0) open++;
+      score += patternScore(count, open);
+    }
+    return score;
+  }
+
+  function candidates() {
+    var list = [];
+    var seen = {};
+    var any = false;
+    for (var r = 0; r < N; r++) {
+      for (var c = 0; c < N; c++) {
+        if (!board[r][c]) continue;
+        any = true;
+        for (var dr = -2; dr <= 2; dr++) {
+          for (var dc = -2; dc <= 2; dc++) {
+            var nr = r + dr, nc = c + dc;
+            if (!inb(nr, nc) || board[nr][nc]) continue;
+            var key = nr * N + nc;
+            if (seen[key]) continue;
+            seen[key] = true;
+            list.push([nr, nc]);
+          }
+        }
+      }
+    }
+    if (!any) return [[7, 7]];
+    return list;
+  }
+
+  function bestMove(me) {
+    var opp = 3 - me;
+    var cells = candidates();
+    var best = null;
+    var bestScore = -1;
+    for (var k = 0; k < cells.length; k++) {
+      var r = cells[k][0], c = cells[k][1];
+      var atk = evalPoint(r, c, me);
+      var def = evalPoint(r, c, opp);
+      if (atk >= 1000000) return { r: r, c: c };
+      if (def >= 1000000) return { r: r, c: c };
+      var s = atk + def * 0.9 + Math.random() * 3;
+      if (s > bestScore) { bestScore = s; best = { r: r, c: c }; }
+    }
+    return best;
+  }
+
+  function aiMove() {
+    if (over || turn !== 2) return;
+    var mv = bestMove(2);
+    if (mv) place(mv.r, mv.c);
+  }
+
+  function restart() {
+    initBoard();
+    turn = 1;
+    over = false;
+    history = [];
+    draw();
+    updateStatus();
+  }
+
+  function undo() {
+    if (!history.length) return;
+    var steps = (modeEl.value === "ai" && history.length >= 2) ? 2 : 1;
+    for (var k = 0; k < steps && history.length; k++) {
+      var last = history.pop();
+      board[last.r][last.c] = 0;
+      turn = last.p;
+    }
+    over = false;
+    draw();
+    updateStatus();
+  }
+
+  canvas.addEventListener("click", function (e) {
+    if (over) return;
+    if (modeEl.value === "ai" && turn === 2) return;
+
+    var rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    var x = (e.clientX - rect.left) / rect.width * SIZE;
+    var y = (e.clientY - rect.top) / rect.height * SIZE;
+    var c = Math.round((x - PAD) / GAP);
+    var r = Math.round((y - PAD) / GAP);
+    if (!inb(r, c)) return;
+    if (Math.hypot(x - (PAD + c * GAP), y - (PAD + r * GAP)) > GAP * 0.55) return;
+    place(r, c);
+  });
+
+  document.getElementById("gomokuRestart").addEventListener("click", restart);
+  document.getElementById("gomokuUndo").addEventListener("click", undo);
+  modeEl.addEventListener("change", restart);
+
+  initBoard();
+  setupCanvas();
+  draw();
+  updateStatus();
+})();
+
+/* ============================================================
+   5. 屏幕尺子
+   ============================================================ */
+(function () {
+  var canvas = document.getElementById("rulerCanvas");
+  if (!canvas) return;
+  var infoEl = document.getElementById("rulerInfo");
+  var calCard = document.getElementById("calCard");
+  var calSlider = document.getElementById("calSlider");
+  var calValue = document.getElementById("calValue");
+
+  var CARD_MM = 85.6;
+  var CARD_RATIO = 53.98 / 85.6;
+  var DEFAULT_PX_PER_MM = 96 / 25.4;
+
+  var pxPerMm = DEFAULT_PX_PER_MM;
+  var saved = parseFloat(Store.get("ruler-pxmm"));
+  if (isFinite(saved) && saved > 1) pxPerMm = saved;
+
+  function syncCalibrationUI() {
+    var w = pxPerMm * CARD_MM;
+    calCard.style.width = w + "px";
+    calCard.style.height = (w * CARD_RATIO) + "px";
+    calSlider.value = String(Math.round(w));
+    calValue.textContent = Math.round(w) + " px";
+    infoEl.textContent = "1 cm ≈ " + (pxPerMm * 10).toFixed(1) + " px";
+  }
+
+  function drawRuler() {
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = Math.max(120, canvas.clientWidth || 320);
+    var H = 110;
+
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.height = H + "px";
+
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, H);
+
+    ctx.strokeStyle = "#8a93a6";
+    ctx.fillStyle = "#8a93a6";
+    ctx.textBaseline = "alphabetic";
+
+    // 上方：英寸刻度（1/16 细分）
+    var inStep = pxPerMm * 25.4 / 16;
+    var total16 = Math.floor(cssW / inStep);
+    ctx.font = "11px sans-serif";
+    for (var n = 0; n <= total16; n++) {
+      var x1 = 0.5 + n * inStep;
+      var len = 6;
+      if (n % 16 === 0) len = 30;
+      else if (n % 8 === 0) len = 22;
+      else if (n % 4 === 0) len = 15;
+      else if (n % 2 === 0) len = 10;
+      ctx.lineWidth = (n % 16 === 0) ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, 2);
+      ctx.lineTo(x1, 2 + len);
+      ctx.stroke();
+      if (n % 16 === 0 && n > 0) {
+        ctx.textAlign = "left";
+        ctx.fillText(String(n / 16), x1 + 3, 42);
+      }
+    }
+    ctx.textAlign = "left";
+    ctx.fillText("inch", 4, 42);
+
+    // 下方：厘米刻度（毫米细分）
+    var totalMm = Math.floor(cssW / pxPerMm);
+    for (var mm = 0; mm <= totalMm; mm++) {
+      var x2 = 0.5 + mm * pxPerMm;
+      var major = mm % 10 === 0;
+      var mid = mm % 5 === 0;
+      var h = major ? 26 : mid ? 16 : 9;
+      ctx.lineWidth = major ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x2, 108);
+      ctx.lineTo(x2, 108 - h);
+      ctx.stroke();
+      if (major) {
+        ctx.textAlign = "center";
+        ctx.fillText(String(mm / 10), x2, 74);
+      }
+    }
+    ctx.textAlign = "left";
+    ctx.fillText("cm", 4, 74);
+  }
+
+  calSlider.addEventListener("input", function () {
+    pxPerMm = Number(calSlider.value) / CARD_MM;
+    Store.set("ruler-pxmm", String(pxPerMm));
+    syncCalibrationUI();
+    drawRuler();
+  });
+
+  var resizeTimer = null;
+  window.addEventListener("resize", function () {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(drawRuler, 120);
+  });
+
+  syncCalibrationUI();
+  drawRuler();
+})();
+
+/* ============================================================
+   6. 分贝仪（噪声计）
+   ============================================================ */
+(function () {
+  var btn = document.getElementById("dbStart");
+  if (!btn) return;
+  var valueEl = document.getElementById("dbValue");
+  var peakEl = document.getElementById("dbPeak");
+  var barEl = document.getElementById("dbBar");
+  var statusEl = document.getElementById("dbStatus");
+  var offsetEl = document.getElementById("dbOffset");
+  var offsetVal = document.getElementById("dbOffsetVal");
+
+  var audioCtx = null;
+  var analyser = null;
+  var stream = null;
+  var data = null;
+  var timerId = null;
+  var running = false;
+  var peak = 0;
+
+  var offset = parseFloat(Store.get("db-offset") || "0");
+  if (!isFinite(offset)) offset = 0;
+  offsetEl.value = String(offset);
+  offsetVal.textContent = String(offset);
+
+  offsetEl.addEventListener("input", function () {
+    offset = Number(offsetEl.value);
+    offsetVal.textContent = String(offset);
+    Store.set("db-offset", String(offset));
+  });
+
+  function stop() {
+    running = false;
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    if (stream) {
+      var tracks = stream.getTracks();
+      for (var i = 0; i < tracks.length; i++) tracks[i].stop();
+      stream = null;
+    }
+    if (audioCtx) { audioCtx.close(); audioCtx = null; }
+    analyser = null;
+    data = null;
+    btn.textContent = "开始测量";
+    statusEl.textContent = "已停止";
+    valueEl.textContent = "--";
+    barEl.style.width = "0%";
+  }
+
+  function update() {
+    if (!running || !analyser) return;
+    analyser.getFloatTimeDomainData(data);
+
+    var sum = 0;
+    for (var i = 0; i < data.length; i++) sum += data[i] * data[i];
+    var rms = Math.sqrt(sum / data.length);
+
+    var db = 20 * Math.log10(rms > 0.000001 ? rms : 0.000001) + 94 + offset;
+    if (db < 0) db = 0;
+    if (db > 130) db = 130;
+
+    valueEl.textContent = db.toFixed(1);
+
+    if (db > peak) peak = db;
+    else peak = Math.max(db, peak - 0.4);
+    peakEl.textContent = peak.toFixed(1);
+
+    barEl.style.width = Math.min(100, db / 120 * 100) + "%";
+    barEl.style.background = db < 60 ? "#22a06b" : db < 80 ? "#f5a524" : "#e5484d";
+  }
+
+  function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      statusEl.textContent = "浏览器不支持麦克风（需 HTTPS 访问）";
+      return;
+    }
+    statusEl.textContent = "请求麦克风权限…";
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    }).then(function (s) {
+      stream = s;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { statusEl.textContent = "浏览器不支持 Web Audio"; return; }
+      audioCtx = new AC();
+      var source = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.15;
+      source.connect(analyser);
+      data = new Float32Array(analyser.fftSize);
+
+      running = true;
+      peak = 0;
+      btn.textContent = "停止测量";
+      statusEl.textContent = "测量中…";
+      timerId = setInterval(update, 100);
+    }).catch(function (err) {
+      var name = err && err.name ? err.name : "未知错误";
+      if (name === "NotAllowedError") statusEl.textContent = "麦克风权限被拒绝";
+      else if (name === "NotFoundError") statusEl.textContent = "没有找到麦克风设备";
+      else statusEl.textContent = "无法获取麦克风：" + name;
+    });
+  }
+
+  btn.addEventListener("click", function () {
+    if (running) stop();
+    else start();
+  });
+})();
 </script>
 </body>
 </html>
