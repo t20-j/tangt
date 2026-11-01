@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="一个纯前端的多功能工具箱：单位换算、密码生成、文本工具，数独、舒尔特方格、五子棋，屏幕尺子、分贝仪，以及 IP 地址查询入口。">
+<meta name="description" content="一个纯前端的多功能工具箱：单位换算、密码生成、文本工具、汇率、亲戚称呼，数独、舒尔特方格、五子棋、中国象棋，15cm 直尺、分贝仪，以及 IP 地址查询入口。">
 <meta name="theme-color" content="#4f6ef7">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -128,6 +128,8 @@
   button.ghost{background:var(--accent-weak); color:var(--accent)}
   button:disabled{cursor:not-allowed; opacity:.6}
   .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+  .kin-steps{display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 10px}
+  .kin-steps button{padding:8px 12px; font-size:14px}
   .checkbox-row{display:flex; flex-wrap:wrap; gap:14px; margin:6px 0 12px}
   .checkbox-row label{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text); cursor:pointer}
   .result{
@@ -190,14 +192,20 @@
     touch-action:manipulation;
   }
 
-  /* ========== 7. 测量工具 ========== */
-  /* 用 outline 而不是 border：边框会占宽度，导致刻度与校准产生 0.5% 误差 */
-  #rulerCanvas{display:block; width:100%; border-radius:10px; border:0; outline:1px solid var(--border); outline-offset:-1px; background:var(--card)}
-  .cal-wrap{overflow-x:auto; padding:4px 0}
-  #calCard{
-    height:0; border:2px dashed var(--accent); border-radius:8px;
-    margin:10px auto; background:rgba(79,110,247,.06);
+  /* 中国象棋 */
+  #xqCanvas{
+    display:block; width:100%; max-width:460px; height:auto;
+    margin:0 auto; border-radius:12px; cursor:pointer;
+    touch-action:manipulation;
   }
+  .xq-card{grid-column:span 2}
+  @media (max-width:820px){ .xq-card{grid-column:span 1} }
+
+  /* ========== 7. 测量工具 ========== */
+  /* 用 outline 而不是 border：边框会占宽度，导致刻度产生 0.5% 误差 */
+  .ruler-scroll{overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; padding:6px 0}
+  .ruler-card{grid-column:1 / -1}
+  #rulerCanvas{display:block; border-radius:10px; border:0; outline:1px solid var(--border); outline-offset:-1px; background:var(--card)}
   .ruler-info{text-align:center; font-size:13px; color:var(--muted); margin-top:8px}
   input[type=range]{width:100%; accent-color:var(--accent); margin:6px 0}
   .db-value{display:flex; align-items:baseline; justify-content:center; gap:6px; margin:6px 0 2px}
@@ -248,7 +256,7 @@
 <!-- ===== 工具 ===== -->
 <section class="section" id="tools">
   <h2>🧰 实用工具</h2>
-  <p class="desc">纯前端运算，断网也能用。</p>
+  <p class="desc">大部分是纯前端运算，断网也能用；汇率与翻译需要联网。</p>
 
   <div class="grid">
 
@@ -321,6 +329,54 @@
         <div class="stat"><span>单词数</span><b id="wordCount">0</b></div>
         <div class="stat"><span>行数</span><b id="lineCount">0</b></div>
       </div>
+      <div class="actions">
+        <button id="toEnBtn" class="ghost" type="button">中 → 英</button>
+        <button id="toZhBtn" class="ghost" type="button">英 → 中</button>
+        <button id="copyTransBtn" class="ghost" type="button">复制译文</button>
+      </div>
+      <div class="result" id="transResult">译文显示在这里（翻译需要联网）</div>
+    </div>
+
+    <!-- 货币汇率 -->
+    <div class="card">
+      <h3>💱 货币汇率转换</h3>
+      <p class="hint">支持 20 多种常见货币；联网自动更新汇率，断网时用上次缓存或估算值。</p>
+      <div class="row">
+        <div class="field">
+          <label for="fxAmount">金额</label>
+          <input id="fxAmount" type="number" value="100" step="any" inputmode="decimal">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label for="fxFrom">从</label>
+          <select id="fxFrom"></select>
+        </div>
+        <div class="field">
+          <label for="fxTo">到</label>
+          <select id="fxTo"></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="fxSwap" class="ghost" type="button">⇄ 互换</button>
+        <button id="fxRefresh" class="ghost" type="button">更新汇率</button>
+      </div>
+      <div class="result" id="fxResult">—</div>
+      <p class="hint" id="fxInfo">正在获取汇率…</p>
+    </div>
+
+    <!-- 亲戚称呼 -->
+    <div class="card">
+      <h3>👪 亲戚称呼转换器</h3>
+      <p class="hint">从"我"出发一路点下去（最多 5 步），自动算出该叫什么。</p>
+      <div class="kin-steps" id="kinSteps"></div>
+      <div class="result" id="kinChain">我</div>
+      <div class="actions">
+        <button id="kinUndo" class="ghost" type="button">撤销一步</button>
+        <button id="kinClear" class="ghost" type="button">清空</button>
+      </div>
+      <div class="result" id="kinResult">请选择关系</div>
+      <p class="hint" id="kinNote"></p>
     </div>
 
   </div>
@@ -398,6 +454,14 @@
             <option value="ai" selected>人机对战（你执黑）</option>
           </select>
         </div>
+        <div class="field">
+          <label for="gomokuDiff">难度</label>
+          <select id="gomokuDiff" aria-label="五子棋难度">
+            <option value="easy">简单</option>
+            <option value="normal" selected>普通</option>
+            <option value="hard">困难</option>
+          </select>
+        </div>
       </div>
       <canvas id="gomokuCanvas" width="560" height="560" aria-label="五子棋棋盘"></canvas>
       <div class="game-meta">
@@ -410,26 +474,55 @@
       </div>
     </div>
 
+    <!-- 中国象棋 -->
+    <div class="card xq-card">
+      <h3>中国象棋</h3>
+      <p class="hint">红方先行，点击自己的棋子再点目标位置走子。支持双人对战和人机对战，规则含蹩马腿、塞象眼、隔子炮、飞将限制。</p>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field">
+          <label for="xqMode">模式</label>
+          <select id="xqMode" aria-label="中国象棋模式">
+            <option value="pvp">双人对战</option>
+            <option value="ai" selected>人机对战（你执红）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="xqDiff">难度</label>
+          <select id="xqDiff" aria-label="中国象棋难度">
+            <option value="1">简单（1 层）</option>
+            <option value="2" selected>普通（2 层）</option>
+            <option value="3">困难（3 层）</option>
+          </select>
+        </div>
+      </div>
+      <canvas id="xqCanvas" width="492" height="546" aria-label="中国象棋棋盘"></canvas>
+      <div class="game-meta">
+        <span id="xqStatus">🔴 红方回合</span>
+        <span>红方在下，黑方在上</span>
+      </div>
+      <div class="actions">
+        <button id="xqRestart" type="button">重新开始</button>
+        <button id="xqUndo" class="ghost" type="button">悔棋</button>
+      </div>
+    </div>
+
   </div>
 </section>
 
 <!-- ===== 测量 ===== -->
 <section class="section" id="measure">
   <h2>📐 测量工具</h2>
-  <p class="desc">需要用真实物体校准一次，校准结果会保存在本机浏览器里。</p>
+  <p class="desc">尺子按手机屏幕尺寸直接标定，不需要实物校准；分贝仪需要麦克风权限。</p>
 
   <div class="grid">
 
-    <!-- 屏幕尺子 -->
-    <div class="card">
-      <h3>屏幕尺子（真实尺寸）</h3>
-      <p class="hint">先用一张标准银行卡（宽 85.6mm）贴在屏幕上，拖动滑块让下方虚线框刚好等于卡片宽度，尺子就校准好了。</p>
-      <canvas id="rulerCanvas" height="110" aria-label="屏幕尺子"></canvas>
-      <div class="ruler-info" id="rulerInfo">1 cm ≈ 37.8 px</div>
-      <div class="cal-wrap"><div id="calCard"></div></div>
-      <label for="calSlider" style="display:block; text-align:center">卡片宽度校准（当前 <b id="calValue">—</b>）</label>
-      <input id="calSlider" type="range" min="120" max="700" value="323" aria-label="校准滑块">
-      <p class="db-note">上方刻度为英寸（1/16 细分），下方刻度为厘米（毫米细分）。</p>
+    <!-- 15 厘米直尺 -->
+    <div class="card ruler-card">
+      <h3>📏 15 厘米直尺（iQOO Neo9）</h3>
+      <p class="hint">按 iQOO Neo9 的 6.78 英寸屏（2800×1260，宽 70.6mm、长 157.0mm）标定，打开就能直接用。手机横屏时自动按长边换算；请保持浏览器缩放 100%，可左右滑动查看整把尺子。</p>
+      <div class="ruler-scroll"><canvas id="rulerCanvas" height="96" aria-label="15 厘米直尺"></canvas></div>
+      <div class="ruler-info" id="rulerInfo">正在按屏幕尺寸计算…</div>
+      <p class="db-note">刻度按中国法定计量单位：厘米（cm）主刻度带数字，5 毫米中刻度，1 毫米小刻度。</p>
     </div>
 
     <!-- 分贝仪 -->
@@ -479,7 +572,7 @@
 <footer>
   单文件静态网站 · 原生 HTML / CSS / JavaScript · 无需服务器<br>
   数据只在本机浏览器计算，不上传、不追踪。<br>
-  <span style="opacity:.7">版本 v3.1 · 2026-11-01（PWA 可安装 / 安卓包已发布）</span><br>
+  <span style="opacity:.7">版本 v5.0 · 2026-11-01（新增中国象棋、五子棋难度、舒尔特七彩格、15cm 直尺）</span><br>
   <a href="https://github.com/t20-j/tangt/releases/latest" target="_blank" rel="noopener noreferrer">📱 下载 Android 安装包（APK）</a>
 </footer>
 
@@ -495,6 +588,33 @@ var Store = {
     try { localStorage.setItem(k, v); } catch (e) { /* 忽略 */ }
   }
 };
+
+/* 通用 JSON 请求（带超时；断网/被墙时抛错，由调用方兜底） */
+function getJSON(url, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    var done = false;
+    var timer = setTimeout(function () {
+      if (done) return;
+      done = true;
+      reject(new Error("timeout"));
+    }, timeoutMs || 10000);
+    function fail(e) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      reject(e);
+    }
+    fetch(url, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(j);
+    }).catch(fail);
+  });
+}
 
 /* ============================================================
    1. 实用工具
@@ -660,6 +780,1004 @@ var Store = {
     area.value = ""; countText();
   });
   countText();
+})();
+
+/* ============================================================
+   1.4 货币汇率转换
+   ============================================================ */
+(function () {
+  var CUR = {
+    CNY: "人民币", USD: "美元", EUR: "欧元", JPY: "日元", GBP: "英镑",
+    HKD: "港币", TWD: "新台币", MOP: "澳门元", KRW: "韩元", SGD: "新加坡元",
+    THB: "泰铢", AUD: "澳元", CAD: "加元", CHF: "瑞郎", RUB: "卢布",
+    INR: "印度卢比", MYR: "林吉特", PHP: "菲律宾比索", VND: "越南盾",
+    IDR: "印尼盾", NZD: "新西兰元", AED: "迪拉姆", SAR: "里亚尔",
+    TRY: "土耳其里拉", BRL: "雷亚尔", ZAR: "南非兰特"
+  };
+  /* 离线估算值（1 CNY 兑换多少），仅在无网络且无缓存时使用，仅作参考 */
+  var FALLBACK = {
+    CNY: 1, USD: 0.14, EUR: 0.13, JPY: 21.5, GBP: 0.11, HKD: 1.09, TWD: 4.5,
+    MOP: 1.12, KRW: 196, SGD: 0.19, THB: 4.75, AUD: 0.215, CAD: 0.20, CHF: 0.12,
+    RUB: 13.2, INR: 11.9, MYR: 0.62, PHP: 8.1, VND: 3600, IDR: 2350, NZD: 0.24,
+    AED: 0.51, SAR: 0.53, TRY: 5.0, BRL: 0.78, ZAR: 2.6
+  };
+  var CACHE_KEY = "fx-rates-v1";
+
+  var amountEl = document.getElementById("fxAmount");
+  var fromEl = document.getElementById("fxFrom");
+  var toEl = document.getElementById("fxTo");
+  var resultEl = document.getElementById("fxResult");
+  var infoEl = document.getElementById("fxInfo");
+  var swapBtn = document.getElementById("fxSwap");
+  var refreshBtn = document.getElementById("fxRefresh");
+  if (!amountEl || !fromEl || !toEl) return;
+
+  var rates = null;
+  var ratesTime = 0;
+  var ratesSource = "";
+
+  function fillSelects() {
+    var html = "";
+    for (var code in CUR) {
+      if (!CUR.hasOwnProperty(code)) continue;
+      html += '<option value="' + code + '">' + code + " " + CUR[code] + "</option>";
+    }
+    fromEl.innerHTML = html;
+    toEl.innerHTML = html;
+    fromEl.value = "CNY";
+    toEl.value = "USD";
+  }
+
+  function fmtNum(x) {
+    if (!isFinite(x)) return "—";
+    var s;
+    if (Math.abs(x) >= 100) s = x.toFixed(2);
+    else if (Math.abs(x) >= 1) s = x.toFixed(3);
+    else s = x.toFixed(4);
+    if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+
+  function render() {
+    var a = parseFloat(amountEl.value);
+    if (!isFinite(a)) a = 0;
+    var f = fromEl.value, t = toEl.value;
+    if (rates && rates[f] && rates[t]) {
+      var v = a * rates[t] / rates[f];
+      resultEl.textContent = fmtNum(a) + " " + f + " ≈ " + fmtNum(v) + " " + t;
+      var unit = rates[t] / rates[f];
+      var when = ratesTime ? new Date(ratesTime).toLocaleString("zh-CN", { hour12: false }) : "";
+      infoEl.textContent = "1 " + f + " = " + fmtNum(unit) + " " + t +
+        "　·　" + ratesSource + (when ? "　·　" + when : "");
+    } else {
+      resultEl.textContent = "汇率未就绪";
+    }
+  }
+
+  function loadCache() {
+    try {
+      var o = JSON.parse(Store.get(CACHE_KEY) || "null");
+      if (!o || !o.rates || !o.ts) return false;
+      rates = o.rates;
+      ratesTime = o.ts;
+      ratesSource = "缓存";
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function useRates(raw, source) {
+    var out = { CNY: 1 };
+    for (var code in CUR) {
+      if (CUR.hasOwnProperty(code) && typeof raw[code] === "number") out[code] = raw[code];
+    }
+    if (!out.USD) return false;
+    rates = out;
+    ratesTime = Date.now();
+    ratesSource = source;
+    Store.set(CACHE_KEY, JSON.stringify({ ts: ratesTime, rates: out }));
+    return true;
+  }
+
+  async function loadRates() {
+    refreshBtn.disabled = true;
+    infoEl.textContent = "正在获取最新汇率…";
+    try {
+      var j = await getJSON("https://open.er-api.com/v6/latest/CNY", 9000);
+      if (j && j.rates && useRates(j.rates, "在线更新")) { render(); refreshBtn.disabled = false; return; }
+    } catch (e) { /* 换下一个源 */ }
+    try {
+      var j2 = await getJSON("https://api.frankfurter.app/latest?from=CNY", 9000);
+      if (j2 && j2.rates && useRates(j2.rates, "在线更新（欧洲央行）")) { render(); refreshBtn.disabled = false; return; }
+    } catch (e) { /* 用缓存 */ }
+    if (loadCache()) {
+      render();
+    } else {
+      rates = FALLBACK;
+      ratesTime = 0;
+      ratesSource = "离线估算（未联网，仅供参考）";
+      render();
+    }
+    refreshBtn.disabled = false;
+  }
+
+  amountEl.addEventListener("input", render);
+  fromEl.addEventListener("change", render);
+  toEl.addEventListener("change", render);
+  swapBtn.addEventListener("click", function () {
+    var t = fromEl.value;
+    fromEl.value = toEl.value;
+    toEl.value = t;
+    render();
+  });
+  refreshBtn.addEventListener("click", loadRates);
+
+  fillSelects();
+  loadCache();
+  render();
+  loadRates();
+})();
+
+/* ============================================================
+   1.5 中英互译（文本工具）
+   ============================================================ */
+(function () {
+  var area = document.getElementById("textArea");
+  var outEl = document.getElementById("transResult");
+  var toEnBtn = document.getElementById("toEnBtn");
+  var toZhBtn = document.getElementById("toZhBtn");
+  var copyBtn = document.getElementById("copyTransBtn");
+  if (!area || !outEl) return;
+
+  var busy = false;
+  var lastTrans = "";
+
+  function splitChunks(text, max) {
+    var lines = text.split("\n");
+    var out = [], cur = "";
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      while (ln.length > max) {
+        if (cur) { out.push(cur); cur = ""; }
+        out.push(ln.slice(0, max));
+        ln = ln.slice(max);
+      }
+      if (!cur) cur = ln;
+      else if (cur.length + 1 + ln.length <= max) cur += "\n" + ln;
+      else { out.push(cur); cur = ln; }
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  async function run(fromLang, toLang, btn) {
+    if (busy) return;
+    var text = area.value.trim();
+    if (!text) { outEl.textContent = "请先在上面的文本框里输入内容"; return; }
+    busy = true;
+    var oldLabel = btn.textContent;
+    btn.disabled = true;
+    toEnBtn.disabled = toZhBtn.disabled = true;
+    try {
+      var chunks = splitChunks(text, 420);
+      var parts = [];
+      for (var i = 0; i < chunks.length; i++) {
+        btn.textContent = "翻译中 " + (i + 1) + "/" + chunks.length + "…";
+        var url = "https://api.mymemory.translated.net/get?q=" +
+          encodeURIComponent(chunks[i]) + "&langpair=" + fromLang + "|" + toLang;
+        var j = await getJSON(url, 15000);
+        var t = j && j.responseData && j.responseData.translatedText;
+        if (!t) throw new Error("空结果");
+        if (/MYMEMORY WARNING/i.test(t)) throw new Error("额度用尽");
+        parts.push(t);
+      }
+      lastTrans = parts.join("\n");
+      outEl.textContent = lastTrans;
+    } catch (e) {
+      outEl.textContent = "翻译失败：需要联网。免费翻译接口有每日额度，稍后再试或换用其他工具。（" + (e && e.message ? e.message : "网络错误") + "）";
+    } finally {
+      busy = false;
+      toEnBtn.disabled = toZhBtn.disabled = false;
+      btn.textContent = oldLabel;
+      btn.disabled = false;
+    }
+  }
+
+  toEnBtn.addEventListener("click", function () { run("zh-CN", "en", toEnBtn); });
+  toZhBtn.addEventListener("click", function () { run("en", "zh-CN", toZhBtn); });
+  copyBtn.addEventListener("click", function () {
+    if (!lastTrans) { outEl.textContent = "还没有译文"; return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(lastTrans).then(function () {
+        copyBtn.textContent = "已复制 ✓";
+        setTimeout(function () { copyBtn.textContent = "复制译文"; }, 1200);
+      }, function () { outEl.textContent = "复制失败，请手动选中"; });
+    } else {
+      outEl.textContent = "当前浏览器不支持自动复制";
+    }
+  });
+})();
+
+/* ============================================================
+   亲戚称呼引擎（表驱动，独立可测试）
+   ============================================================ */
+/*
+ * 中文亲戚称呼计算器引擎（ES5）
+ *
+ * 设计说明：
+ * 1. 输入是一条“关系步骤链”，例如 ['父','兄'] 表示“爸爸的哥哥”。
+ * 2. 先查 EXACT 表：收录常见、称呼稳定的完整关系链。
+ * 3. 再用少量规则生成有规律的组合：直系后代、堂表兄弟姐妹、堂表侄甥、
+ *    父母的堂表兄弟姐妹等。
+ * 4. 没有把握的组合一律返回 ok:false，并在 note 中写清关系链，
+ *    不猜测、不编造称呼。
+ *
+ * 兼容性：不使用 import/export、箭头函数、模板字符串、let/const，
+ * 可直接用 script 标签引入；同时兼容 Node 的
+ * require()，方便运行 _kinship_test.js。
+ */
+(function(global) {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * 一、对外暴露的步骤定义
+   * ------------------------------------------------------------------ */
+
+  var STEPS = [
+    { key: '父', label: '父亲' },
+    { key: '母', label: '母亲' },
+    { key: '夫', label: '丈夫' },
+    { key: '妻', label: '妻子' },
+    { key: '子', label: '儿子' },
+    { key: '女', label: '女儿' },
+    { key: '兄', label: '哥哥' },
+    { key: '弟', label: '弟弟' },
+    { key: '姐', label: '姐姐' },
+    { key: '妹', label: '妹妹' }
+  ];
+
+  /*
+   * 每个步骤的说明信息。
+   * word   用于口语关系说明，例如“爸爸的哥哥”。
+   * formal 用于未收录提示，例如“父亲的母亲的弟弟”。
+   */
+  var STEP_INFO = {
+    '父': { word: '爸爸', formal: '父亲' },
+    '母': { word: '妈妈', formal: '母亲' },
+    '夫': { word: '丈夫', formal: '丈夫' },
+    '妻': { word: '妻子', formal: '妻子' },
+    '子': { word: '儿子', formal: '儿子' },
+    '女': { word: '女儿', formal: '女儿' },
+    '兄': { word: '哥哥', formal: '哥哥' },
+    '弟': { word: '弟弟', formal: '弟弟' },
+    '姐': { word: '姐姐', formal: '姐姐' },
+    '妹': { word: '妹妹', formal: '妹妹' }
+  };
+
+  /* ------------------------------------------------------------------ *
+   * 二、通用小工具
+   * ------------------------------------------------------------------ */
+
+  function makeResult(ok, name, alias, note) {
+    return {
+      ok: ok,
+      name: name || '',
+      alias: alias || '',
+      note: note || ''
+    };
+  }
+
+  function keyOf(chain) {
+    return chain.join('>');
+  }
+
+  function isSibling(key) {
+    return key === '兄' || key === '弟' || key === '姐' || key === '妹';
+  }
+
+  function isBrother(key) {
+    return key === '兄' || key === '弟';
+  }
+
+  function isChild(key) {
+    return key === '子' || key === '女';
+  }
+
+  /*
+   * 把关系链转成直白说明。
+   * formal=true 时使用“父亲/母亲”等书面说法，适合未收录提示。
+   */
+  function describeChain(chain, formal) {
+    var parts = [];
+    var i;
+    var info;
+    for (i = 0; i < chain.length; i += 1) {
+      info = STEP_INFO[chain[i]];
+      if (info) {
+        parts.push(formal ? info.formal : info.word);
+      } else {
+        parts.push(String(chain[i]));
+      }
+    }
+    if (parts.length === 0) {
+      return '自己';
+    }
+    return parts.join('的');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 三、精确表：常见且称呼稳定的完整关系链
+   *
+   * 表项格式：关系链 -> { name: 主称呼, alias: 别名, note: 关系说明 }
+   * 用 add(path, name, alias, note) 注册。
+   * ------------------------------------------------------------------ */
+
+  var EXACT = {};
+
+  function add(path, name, alias, note) {
+    EXACT[keyOf(path)] = {
+      name: name,
+      alias: alias || '',
+      note: note || describeChain(path, false)
+    };
+  }
+
+  /* ---------- 3.1 直系长辈：父系、母系各四代 ---------- */
+
+  add(['父'], '父亲', '爸爸', '爸爸');
+  add(['母'], '母亲', '妈妈', '妈妈');
+  add(['夫'], '丈夫', '老公', '丈夫');
+  add(['妻'], '妻子', '老婆', '妻子');
+
+  add(['父', '父'], '祖父', '爷爷', '爸爸的爸爸');
+  add(['父', '母'], '祖母', '奶奶', '爸爸的妈妈');
+  add(['母', '父'], '外祖父', '姥爷', '妈妈的爸爸');
+  add(['母', '母'], '外祖母', '姥姥', '妈妈的妈妈');
+
+  /*
+   * 曾祖辈的八个位置各有一个传统称呼，按“父系/母系 + 祖父系/祖母系”
+   * 组合区分：
+   *   父父父=曾祖父，父父母=曾祖母；
+   *   父母父=曾外祖父，父母母=曾外祖母；
+   *   母父父=外曾祖父，母父母=外曾祖母；
+   *   母母父=外曾外祖父，母母母=外曾外祖母。
+   */
+  add(['父', '父', '父'], '曾祖父', '太爷爷', '爸爸的爷爷');
+  add(['父', '父', '母'], '曾祖母', '太奶奶', '爸爸的奶奶');
+  add(['父', '母', '父'], '曾外祖父', '太姥爷', '奶奶的爸爸');
+  add(['父', '母', '母'], '曾外祖母', '太姥姥', '奶奶的妈妈');
+  add(['母', '父', '父'], '外曾祖父', '太姥爷', '妈妈的爷爷');
+  add(['母', '父', '母'], '外曾祖母', '太姥姥', '妈妈的奶奶');
+  add(['母', '母', '父'], '外曾外祖父', '外太姥爷', '姥姥的爸爸');
+  add(['母', '母', '母'], '外曾外祖母', '外太姥姥', '姥姥的妈妈');
+
+  /*
+   * 第四代直系长辈：只对最常见的纯父系、纯母系路径给出“高祖父/母”，
+   * 混合路径的各地叫法差异很大，留到未收录提示中，避免乱叫。
+   */
+  add(['父', '父', '父', '父'], '高祖父', '高祖', '爸爸的曾祖父');
+  add(['父', '父', '父', '母'], '高祖母', '', '爸爸的曾祖母');
+  add(['母', '父', '父', '父'], '外高祖父', '外高祖', '妈妈的曾祖父');
+  add(['母', '父', '父', '母'], '外高祖母', '', '妈妈的曾祖母');
+  add(['母', '父', '母', '父'], '外高祖父', '外高祖', '妈妈的外曾祖父');
+  add(['母', '父', '母', '母'], '外高祖母', '', '妈妈的外曾祖母');
+  add(['母', '母', '父', '父'], '外高祖父', '外高祖', '妈妈的外曾外祖父');
+  add(['母', '母', '父', '母'], '外高祖母', '', '妈妈的外曾外祖母');
+  add(['母', '母', '母', '父'], '外高祖父', '外高祖', '妈妈的外曾外祖父');
+  add(['母', '母', '母', '母'], '外高祖母', '', '妈妈的外曾外祖母');
+
+  /* ---------- 3.2 直系晚辈：子女、孙辈（三、四代由规则生成） ---------- */
+
+  add(['子'], '儿子', '儿', '儿子');
+  add(['女'], '女儿', '闺女', '女儿');
+  add(['子', '子'], '孙子', '孙儿', '儿子的儿子');
+  add(['子', '女'], '孙女', '', '儿子的女儿');
+  add(['女', '子'], '外孙', '外孙子', '女儿的儿子');
+  add(['女', '女'], '外孙女', '', '女儿的女儿');
+
+  /* ---------- 3.3 兄弟姐妹 ---------- */
+
+  add(['兄'], '哥哥', '哥', '哥哥');
+  add(['弟'], '弟弟', '弟', '弟弟');
+  add(['姐'], '姐姐', '姐', '姐姐');
+  add(['妹'], '妹妹', '妹', '妹妹');
+
+  /* ---------- 3.4 父母的兄弟姐妹（伯叔姑舅姨）及配偶 ---------- */
+
+  add(['父', '兄'], '伯父', '大伯', '爸爸的哥哥');
+  add(['父', '弟'], '叔父', '叔叔', '爸爸的弟弟');
+  add(['父', '姐'], '姑母', '姑姑', '爸爸的姐姐');
+  add(['父', '妹'], '姑母', '小姑', '爸爸的妹妹');
+
+  add(['母', '兄'], '舅父', '舅舅', '妈妈的哥哥');
+  add(['母', '弟'], '舅父', '舅舅', '妈妈的弟弟');
+  add(['母', '姐'], '姨母', '姨妈', '妈妈的姐姐');
+  add(['母', '妹'], '姨母', '小姨', '妈妈的妹妹');
+
+  add(['父', '兄', '妻'], '伯母', '大娘', '伯父的妻子');
+  add(['父', '弟', '妻'], '婶母', '婶婶', '叔父的妻子');
+  add(['父', '姐', '夫'], '姑父', '姑丈', '姑母的丈夫');
+  add(['父', '妹', '夫'], '姑父', '姑丈', '姑母的丈夫');
+  add(['母', '兄', '妻'], '舅母', '舅妈', '舅父的妻子');
+  add(['母', '弟', '妻'], '舅母', '舅妈', '舅父的妻子');
+  add(['母', '姐', '夫'], '姨父', '姨丈', '姨母的丈夫');
+  add(['母', '妹', '夫'], '姨父', '姨丈', '姨母的丈夫');
+
+  /* ---------- 3.5 侄甥及配偶 ---------- */
+
+  add(['兄', '子'], '侄子', '侄儿', '哥哥的儿子');
+  add(['兄', '女'], '侄女', '', '哥哥的女儿');
+  add(['弟', '子'], '侄子', '侄儿', '弟弟的儿子');
+  add(['弟', '女'], '侄女', '', '弟弟的女儿');
+  add(['姐', '子'], '外甥', '', '姐姐的儿子');
+  add(['姐', '女'], '外甥女', '', '姐姐的女儿');
+  add(['妹', '子'], '外甥', '', '妹妹的儿子');
+  add(['妹', '女'], '外甥女', '', '妹妹的女儿');
+
+  add(['兄', '子', '妻'], '侄媳', '侄媳妇', '侄子的妻子');
+  add(['弟', '子', '妻'], '侄媳', '侄媳妇', '侄子的妻子');
+  add(['兄', '女', '夫'], '侄女婿', '', '侄女的丈夫');
+  add(['弟', '女', '夫'], '侄女婿', '', '侄女的丈夫');
+  add(['姐', '子', '妻'], '外甥媳', '外甥媳妇', '外甥的妻子');
+  add(['妹', '子', '妻'], '外甥媳', '外甥媳妇', '外甥的妻子');
+  add(['姐', '女', '夫'], '外甥女婿', '', '外甥女的丈夫');
+  add(['妹', '女', '夫'], '外甥女婿', '', '外甥女的丈夫');
+
+  /* ---------- 3.6 祖辈旁系：祖父/祖母/外祖父/外祖母的兄弟姐妹 ---------- */
+
+  add(['父', '父', '兄'], '伯祖父', '大爷爷', '爷爷的哥哥');
+  add(['父', '父', '弟'], '叔祖父', '叔爷爷', '爷爷的弟弟');
+  add(['父', '父', '姐'], '姑祖母', '姑奶奶', '爷爷的姐姐');
+  add(['父', '父', '妹'], '姑祖母', '姑奶奶', '爷爷的妹妹');
+
+  add(['父', '母', '兄'], '舅祖父', '舅爷爷', '奶奶的哥哥');
+  add(['父', '母', '弟'], '舅祖父', '舅爷爷', '奶奶的弟弟');
+  add(['父', '母', '姐'], '姨祖母', '姨奶奶', '奶奶的姐姐');
+  add(['父', '母', '妹'], '姨祖母', '姨奶奶', '奶奶的妹妹');
+
+  add(['母', '父', '兄'], '外伯祖父', '外大爷爷', '姥爷的哥哥');
+  add(['母', '父', '弟'], '外叔祖父', '外叔爷爷', '姥爷的弟弟');
+  add(['母', '父', '姐'], '外姑祖母', '外姑奶奶', '姥爷的姐姐');
+  add(['母', '父', '妹'], '外姑祖母', '外姑奶奶', '姥爷的妹妹');
+
+  add(['母', '母', '兄'], '外舅祖父', '舅姥爷', '姥姥的哥哥');
+  add(['母', '母', '弟'], '外舅祖父', '舅姥爷', '姥姥的弟弟');
+  add(['母', '母', '姐'], '外姨祖母', '姨姥姥', '姥姥的姐姐');
+  add(['母', '母', '妹'], '外姨祖母', '姨姥姥', '姥姥的妹妹');
+
+  /* ---------- 3.7 曾祖辈旁系：只收较常见的四组 ---------- */
+
+  add(['父', '父', '父', '兄'], '曾伯祖父', '曾伯公', '曾祖父的哥哥');
+  add(['父', '父', '父', '弟'], '曾叔祖父', '曾叔公', '曾祖父的弟弟');
+  add(['父', '父', '父', '姐'], '曾姑祖母', '曾姑奶奶', '曾祖父的姐姐');
+  add(['父', '父', '父', '妹'], '曾姑祖母', '曾姑奶奶', '曾祖父的妹妹');
+
+  add(['父', '父', '母', '兄'], '曾舅祖父', '曾舅公', '曾祖母的哥哥');
+  add(['父', '父', '母', '弟'], '曾舅祖父', '曾舅公', '曾祖母的弟弟');
+  add(['父', '父', '母', '姐'], '曾姨祖母', '曾姨奶奶', '曾祖母的姐姐');
+  add(['父', '父', '母', '妹'], '曾姨祖母', '曾姨奶奶', '曾祖母的妹妹');
+
+  add(['母', '父', '父', '兄'], '外曾伯祖父', '外曾伯公', '外曾祖父的哥哥');
+  add(['母', '父', '父', '弟'], '外曾叔祖父', '外曾叔公', '外曾祖父的弟弟');
+  add(['母', '父', '父', '姐'], '外曾姑祖母', '外曾姑奶奶', '外曾祖父的姐姐');
+  add(['母', '父', '父', '妹'], '外曾姑祖母', '外曾姑奶奶', '外曾祖父的妹妹');
+
+  add(['母', '父', '母', '兄'], '外曾舅祖父', '外曾舅公', '外曾祖母的哥哥');
+  add(['母', '父', '母', '弟'], '外曾舅祖父', '外曾舅公', '外曾祖母的弟弟');
+  add(['母', '父', '母', '姐'], '外曾姨祖母', '外曾姨奶奶', '外曾祖母的姐姐');
+  add(['母', '父', '母', '妹'], '外曾姨祖母', '外曾姨奶奶', '外曾祖母的妹妹');
+
+  /* ---------- 3.8 姻亲：配偶的父母、子女配偶、兄弟姐妹配偶 ---------- */
+
+  add(['夫', '父'], '公公', '公爹', '丈夫的爸爸');
+  add(['夫', '母'], '婆婆', '婆母', '丈夫的妈妈');
+  add(['妻', '父'], '岳父', '丈人、老丈人', '妻子的爸爸');
+  add(['妻', '母'], '岳母', '丈母娘', '妻子的妈妈');
+
+  add(['子', '妻'], '儿媳', '儿媳妇', '儿子的妻子');
+  add(['女', '夫'], '女婿', '姑爷', '女儿的丈夫');
+
+  add(['兄', '妻'], '嫂子', '嫂嫂', '哥哥的妻子');
+  add(['弟', '妻'], '弟媳', '弟媳妇', '弟弟的妻子');
+  add(['姐', '夫'], '姐夫', '', '姐姐的丈夫');
+  add(['妹', '夫'], '妹夫', '', '妹妹的丈夫');
+
+  add(['夫', '兄'], '大伯子', '大伯哥', '丈夫的哥哥');
+  add(['夫', '弟'], '小叔子', '', '丈夫的弟弟');
+  add(['夫', '姐'], '大姑子', '大姑姐', '丈夫的姐姐');
+  add(['夫', '妹'], '小姑子', '', '丈夫的妹妹');
+
+  add(['妻', '兄'], '大舅子', '大舅哥', '妻子的哥哥');
+  add(['妻', '弟'], '小舅子', '', '妻子的弟弟');
+  add(['妻', '姐'], '大姨子', '大姨姐', '妻子的姐姐');
+  add(['妻', '妹'], '小姨子', '', '妻子的妹妹');
+
+  /* ------------------------------------------------------------------ *
+   * 四、规则生成：有规律、可系统命名的组合
+   * ------------------------------------------------------------------ */
+
+  /*
+   * 4.1 直系后代（三至四代）。
+   * 例：子子子=曾孙，子子子子=玄孙。
+   * 路径中只要出现过女性传递（最后一位除外），就加“外”。
+   */
+  function matchDirectDescendant(chain) {
+    var i;
+    var depth;
+    var external;
+    var target;
+    var base;
+    var alias;
+
+    if (chain.length < 1 || chain.length > 4) {
+      return null;
+    }
+    for (i = 0; i < chain.length; i += 1) {
+      if (!isChild(chain[i])) {
+        return null;
+      }
+    }
+
+    depth = chain.length;
+    target = chain[depth - 1];
+
+    if (depth === 1) {
+      if (target === '子') {
+        return makeResult(true, '儿子', '儿', describeChain(chain, false));
+      }
+      return makeResult(true, '女儿', '闺女', describeChain(chain, false));
+    }
+
+    if (depth === 2) {
+      if (chain[0] === '子') {
+        return makeResult(
+          true,
+          target === '子' ? '孙子' : '孙女',
+          target === '子' ? '孙儿' : '',
+          describeChain(chain, false)
+        );
+      }
+      return makeResult(
+        true,
+        target === '子' ? '外孙' : '外孙女',
+        target === '子' ? '外孙子' : '',
+        describeChain(chain, false)
+      );
+    }
+
+    external = false;
+    for (i = 0; i < depth - 1; i += 1) {
+      if (chain[i] === '女') {
+        external = true;
+        break;
+      }
+    }
+
+    if (depth === 3) {
+      base = target === '子' ? '曾孙' : '曾孙女';
+      alias = target === '子' ? '重孙' : '重孙女';
+    } else {
+      base = target === '子' ? '玄孙' : '玄孙女';
+      alias = target === '子' ? '元孙' : '元孙女';
+    }
+
+    return makeResult(
+      true,
+      (external ? '外' : '') + base,
+      external ? '' : alias,
+      describeChain(chain, false)
+    );
+  }
+
+  /*
+   * 4.2 堂/表兄弟姐妹。
+   * 父之兄弟的子女 = 堂；父之姐妹、母之兄弟姐妹的子女 = 表。
+   * 年龄无法从链中判断，因此名字中保留“兄或弟/姐或妹，视年龄”。
+   */
+  function matchCousin(chain) {
+    var tang;
+    var prefix;
+    var isMale;
+    var name;
+    var alias;
+
+    if (chain.length !== 3) {
+      return null;
+    }
+    if (chain[0] !== '父' && chain[0] !== '母') {
+      return null;
+    }
+    if (!isSibling(chain[1]) || !isChild(chain[2])) {
+      return null;
+    }
+
+    tang = chain[0] === '父' && isBrother(chain[1]);
+    prefix = tang ? '堂' : '表';
+    isMale = chain[2] === '子';
+
+    if (isMale) {
+      name = prefix + '兄（或' + prefix + '弟，视年龄）';
+      alias = prefix + '兄弟';
+    } else {
+      name = prefix + '姐（或' + prefix + '妹，视年龄）';
+      alias = prefix + '姐妹';
+    }
+
+    return makeResult(true, name, alias, describeChain(chain, false));
+  }
+
+  /*
+   * 4.3 堂/表兄弟姐妹的子女。
+   * 男表亲的子女：堂侄/表侄；女表亲的子女：堂外甥/表外甥。
+   */
+  function matchCousinChild(chain) {
+    var tang;
+    var prefix;
+    var cousinIsMale;
+    var childIsMale;
+    var name;
+    var alias;
+
+    if (chain.length !== 4) {
+      return null;
+    }
+    if (chain[0] !== '父' && chain[0] !== '母') {
+      return null;
+    }
+    if (!isSibling(chain[1]) || !isChild(chain[2]) || !isChild(chain[3])) {
+      return null;
+    }
+
+    tang = chain[0] === '父' && isBrother(chain[1]);
+    prefix = tang ? '堂' : '表';
+    cousinIsMale = chain[2] === '子';
+    childIsMale = chain[3] === '子';
+
+    if (cousinIsMale) {
+      name = prefix + (childIsMale ? '侄' : '侄女');
+      alias = prefix + (childIsMale ? '侄子' : '侄女');
+    } else {
+      name = prefix + (childIsMale ? '外甥' : '外甥女');
+      alias = prefix + (childIsMale ? '外甥' : '外甥女');
+    }
+
+    return makeResult(true, name, alias, describeChain(chain, false));
+  }
+
+  /*
+   * 4.4 堂/表兄弟姐妹的配偶。
+   * 年龄仍无法判断，保留“嫂子或弟媳”“姐夫或妹夫”的说明。
+   */
+  function matchCousinSpouse(chain) {
+    var tang;
+    var prefix;
+
+    if (chain.length !== 4) {
+      return null;
+    }
+    if (chain[0] !== '父' && chain[0] !== '母') {
+      return null;
+    }
+    if (!isSibling(chain[1]) || !isChild(chain[2])) {
+      return null;
+    }
+
+    tang = chain[0] === '父' && isBrother(chain[1]);
+    prefix = tang ? '堂' : '表';
+
+    if (chain[2] === '子' && chain[3] === '妻') {
+      return makeResult(
+        true,
+        prefix + '嫂（或' + prefix + '弟媳，视年龄）',
+        prefix + '嫂/弟媳',
+        describeChain(chain, false)
+      );
+    }
+    if (chain[2] === '女' && chain[3] === '夫') {
+      return makeResult(
+        true,
+        prefix + '姐夫（或' + prefix + '妹夫，视年龄）',
+        prefix + '姐夫/妹夫',
+        describeChain(chain, false)
+      );
+    }
+    return null;
+  }
+
+  /*
+   * 4.5 父母的堂/表兄弟姐妹（也就是祖辈旁系的子女）。
+   * 例：父父兄子 = 父亲的堂兄弟 = 堂伯父或堂叔父。
+   */
+  function matchParentCousin(chain) {
+    var tang;
+    var prefix;
+    var parent;
+    var targetMale;
+    var name;
+    var alias;
+
+    if (chain.length !== 4) {
+      return null;
+    }
+    if (chain[0] !== '父' && chain[0] !== '母') {
+      return null;
+    }
+    if (chain[1] !== '父' && chain[1] !== '母') {
+      return null;
+    }
+    if (!isSibling(chain[2]) || !isChild(chain[3])) {
+      return null;
+    }
+
+    tang = chain[1] === '父' && isBrother(chain[2]);
+    prefix = tang ? '堂' : '表';
+    parent = chain[0];
+    targetMale = chain[3] === '子';
+
+    if (parent === '父') {
+      if (targetMale) {
+        name = prefix + '伯父（或' + prefix + '叔父，视年龄）';
+        alias = prefix + '伯叔';
+      } else {
+        name = prefix + '姑母';
+        alias = prefix + '姑妈';
+      }
+    } else {
+      if (targetMale) {
+        name = prefix + '舅父';
+        alias = prefix + '舅舅';
+      } else {
+        name = prefix + '姨母';
+        alias = prefix + '姨妈';
+      }
+    }
+
+    return makeResult(true, name, alias, describeChain(chain, false));
+  }
+
+  /*
+   * 4.6 兄弟姐妹的孙辈。
+   * 兄弟之子的子女 = 侄孙/侄孙女；
+   * 姐妹之子的子女 = 外甥孙/外甥孙女。
+   * 兄弟之女、姐妹之女的子女叫法地域差异较大，暂不硬猜。
+   */
+  function matchSiblingGrandchild(chain) {
+    var first;
+    var second;
+    var third;
+    var maleChild;
+
+    if (chain.length !== 3 || !isSibling(chain[0]) || !isChild(chain[1]) || !isChild(chain[2])) {
+      return null;
+    }
+
+    first = chain[0];
+    second = chain[1];
+    third = chain[2];
+    maleChild = third === '子';
+
+    if (second !== '子') {
+      return null;
+    }
+
+    if (isBrother(first)) {
+      return makeResult(
+        true,
+        maleChild ? '侄孙' : '侄孙女',
+        maleChild ? '侄孙子' : '',
+        describeChain(chain, false)
+      );
+    }
+
+    return makeResult(
+      true,
+      maleChild ? '外甥孙' : '外甥孙女',
+      maleChild ? '外甥孙子' : '',
+      describeChain(chain, false)
+    );
+  }
+
+  /*
+   * 统一按顺序尝试规则。精确表命中时不会走到这里。
+   */
+  function matchByRule(chain) {
+    var result;
+
+    result = matchDirectDescendant(chain);
+    if (result) {
+      return result;
+    }
+
+    result = matchCousin(chain);
+    if (result) {
+      return result;
+    }
+
+    result = matchCousinChild(chain);
+    if (result) {
+      return result;
+    }
+
+    result = matchCousinSpouse(chain);
+    if (result) {
+      return result;
+    }
+
+    result = matchParentCousin(chain);
+    if (result) {
+      return result;
+    }
+
+    result = matchSiblingGrandchild(chain);
+    if (result) {
+      return result;
+    }
+
+    return null;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 五、未收录与非法输入
+   * ------------------------------------------------------------------ */
+
+  function failUnknown(chain) {
+    return makeResult(
+      false,
+      '',
+      '',
+      '该组合暂未收录：' + describeChain(chain, true) +
+        '。各地叫法不同，建议按当地习惯称呼。'
+    );
+  }
+
+  function failInvalidKey(key) {
+    return makeResult(
+      false,
+      '',
+      '',
+      '该组合暂未收录：关系链包含非法步骤「' + String(key) + '」。'
+    );
+  }
+
+  function failNotArray() {
+    return makeResult(false, '', '', '该组合暂未收录：关系链必须是数组。');
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 六、主入口
+   * ------------------------------------------------------------------ */
+
+  function resolveName(chain) {
+    var i;
+    var exact;
+
+    if (!Array.isArray(chain)) {
+      return failNotArray();
+    }
+
+    for (i = 0; i < chain.length; i += 1) {
+      if (typeof chain[i] !== 'string' || !STEP_INFO[chain[i]]) {
+        return failInvalidKey(chain[i]);
+      }
+    }
+
+    if (chain.length === 0) {
+      return makeResult(true, '自己', '本人', '你自己');
+    }
+
+    exact = EXACT[keyOf(chain)];
+    if (exact) {
+      return makeResult(true, exact.name, exact.alias, exact.note);
+    }
+
+    exact = matchByRule(chain);
+    if (exact) {
+      return exact;
+    }
+
+    return failUnknown(chain);
+  }
+
+  /*
+   * 最外层加一层保护：无论用户传入什么，都不让计算器抛异常。
+   */
+  function name(chain) {
+    try {
+      return resolveName(chain);
+    } catch (err) {
+      return makeResult(false, '', '', '该组合暂未收录：关系链无法解析。');
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 七、导出
+   * ------------------------------------------------------------------ */
+
+  var api = {
+    STEPS: STEPS,
+    name: name
+  };
+
+  global.KinshipCalc = api;
+
+  /* 兼容 Node 的 require()；浏览器中没有 module，不会执行到这里。 */
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = api;
+  }
+})(this);
+
+/* ============================================================
+   1.6 亲戚称呼转换器（引擎在上方 KinshipCalc）
+   ============================================================ */
+(function () {
+  var stepsEl = document.getElementById("kinSteps");
+  var chainEl = document.getElementById("kinChain");
+  var resultEl = document.getElementById("kinResult");
+  var noteEl = document.getElementById("kinNote");
+  var undoBtn = document.getElementById("kinUndo");
+  var clearBtn = document.getElementById("kinClear");
+  if (!stepsEl || !undoBtn) return;
+  var MAX = 5;
+  var chain = [];
+  var KC = window.KinshipCalc;
+
+  function labelOf(key) {
+    if (!KC) return key;
+    for (var i = 0; i < KC.STEPS.length; i++) {
+      if (KC.STEPS[i].key === key) return KC.STEPS[i].label;
+    }
+    return key;
+  }
+
+  function render() {
+    var s = "我";
+    for (var i = 0; i < chain.length; i++) s += " → " + labelOf(chain[i]);
+    chainEl.textContent = s;
+    if (!chain.length) {
+      resultEl.textContent = "我（你自己）";
+      noteEl.textContent = KC ? "点上面的按钮开始选择关系，最多 5 步。" : "称呼引擎加载中…";
+    } else if (!KC) {
+      resultEl.textContent = "引擎加载中…";
+    } else {
+      var r = KC.name(chain);
+      resultEl.textContent = r.ok ? r.name : "暂未收录";
+      var n = [];
+      if (r.ok && r.alias) n.push("也称：" + r.alias);
+      if (r.note) n.push(r.note);
+      if (!r.ok) n.push("各地叫法差异大，可按上面的关系链自行判断");
+      noteEl.textContent = n.join("　·　");
+    }
+    undoBtn.disabled = chain.length === 0;
+    for (var b = 0; b < stepsEl.children.length; b++) {
+      stepsEl.children[b].disabled = chain.length >= MAX;
+    }
+  }
+
+  if (KC) {
+    for (var i = 0; i < KC.STEPS.length; i++) {
+      (function (step) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ghost";
+        btn.textContent = step.label;
+        btn.addEventListener("click", function () {
+          if (chain.length >= MAX) return;
+          chain.push(step.key);
+          render();
+        });
+        stepsEl.appendChild(btn);
+      })(KC.STEPS[i]);
+    }
+  }
+
+  undoBtn.addEventListener("click", function () {
+    chain.pop();
+    render();
+  });
+  clearBtn.addEventListener("click", function () {
+    chain.length = 0;
+    render();
+  });
+  render();
 })();
 
 /* ============================================================
@@ -973,6 +2091,8 @@ var Store = {
   var running = false;
   var startTs = 0;
   var tickId = null;
+  // 中国习惯的七彩：红、橙、黄、绿、青、蓝、紫（3×3 到 6×6 都按数字顺序循环取色）
+  var PALETTE = ["#e5484d", "#f76b15", "#f5d90a", "#30a46c", "#00b8b8", "#3e63dd", "#8e4ec6"];
 
   function fmt(sec) { return sec.toFixed(2) + "s"; }
 
@@ -1002,6 +2122,10 @@ var Store = {
       b.type = "button";
       b.textContent = String(nums[m]);
       b.setAttribute("data-n", String(nums[m]));
+      // 每个数字一个颜色，按 红→橙→黄→绿→青→蓝→紫 循环（与数字本身绑定，方便记忆）
+      var cIdx = (nums[m] - 1) % PALETTE.length;
+      b.style.background = PALETTE[cIdx];
+      b.style.color = cIdx === 2 ? "#1d2433" : "#ffffff"; // 黄色底用深色字，保证可读
       b.addEventListener("click", onCellClick);
       gridEl.appendChild(b);
     }
@@ -1060,6 +2184,7 @@ var Store = {
   var ctx = canvas.getContext("2d");
   var statusEl = document.getElementById("gomokuStatus");
   var modeEl = document.getElementById("gomokuMode");
+  var diffEl = document.getElementById("gomokuDiff");
 
   var N = 15;
   var SIZE = 560;
@@ -1246,6 +2371,7 @@ var Store = {
     var opp = 3 - me;
     var cells = candidates();
     var k, r, c;
+    var level = diffEl ? diffEl.value : "normal";
 
     // 先扫一遍：自己能立刻五连就直接赢
     for (k = 0; k < cells.length; k++) {
@@ -1253,24 +2379,56 @@ var Store = {
         return { r: cells[k][0], c: cells[k][1] };
       }
     }
-    // 再扫一遍：对手能立刻五连就必须堵
-    for (k = 0; k < cells.length; k++) {
-      if (evalPoint(cells[k][0], cells[k][1], opp) >= 1000000) {
-        return { r: cells[k][0], c: cells[k][1] };
+    // 再扫一遍：对手能立刻五连就必须堵（简单难度有一半概率"看漏"）
+    if (!(level === "easy" && Math.random() < 0.5)) {
+      for (k = 0; k < cells.length; k++) {
+        if (evalPoint(cells[k][0], cells[k][1], opp) >= 1000000) {
+          return { r: cells[k][0], c: cells[k][1] };
+        }
       }
     }
 
-    var best = null;
-    var bestScore = -1;
+    var scored = [];
     for (k = 0; k < cells.length; k++) {
       r = cells[k][0];
       c = cells[k][1];
       var atk = evalPoint(r, c, me);
       var def = evalPoint(r, c, opp);
-      var s = atk + def * 0.9 + Math.random() * 3;
-      if (s > bestScore) { bestScore = s; best = { r: r, c: c }; }
+      scored.push({ r: r, c: c, atk: atk, def: def, s: atk + def * 0.9 + Math.random() * 3 });
     }
-    return best;
+    scored.sort(function (a, b) { return b.s - a.s; });
+
+    if (level === "easy") {
+      // 简单：只在靠前的几个点里随机挑一个，且不太会防守
+      var topE = scored.slice(0, Math.min(6, scored.length));
+      var pick = topE[Math.floor(Math.random() * topE.length)];
+      return { r: pick.r, c: pick.c };
+    }
+
+    if (level === "hard" && scored.length) {
+      // 困难：对前 8 个候选做一步前瞻——我下这里之后，对手能拿到的最好一手有多强
+      var head = scored.slice(0, Math.min(8, scored.length));
+      var bestH = null, bestHScore = -1e15;
+      for (var h = 0; h < head.length; h++) {
+        var mv = head[h];
+        board[mv.r][mv.c] = me;
+        var oppBest = 0;
+        // 对手候选只看棋盘上已有棋子周围 2 格（复用候选生成太慢，这里就近采样）
+        for (var rr = Math.max(0, mv.r - 2); rr <= Math.min(N - 1, mv.r + 2); rr++) {
+          for (var cc = Math.max(0, mv.c - 2); cc <= Math.min(N - 1, mv.c + 2); cc++) {
+            if (board[rr][cc]) continue;
+            var sc = evalPoint(rr, cc, opp);
+            if (sc > oppBest) oppBest = sc;
+          }
+        }
+        board[mv.r][mv.c] = 0;
+        var hs = mv.atk + mv.def * 0.95 - oppBest * 0.85;
+        if (hs > bestHScore) { bestHScore = hs; bestH = { r: mv.r, c: mv.c }; }
+      }
+      if (bestH) return bestH;
+    }
+
+    return { r: scored[0].r, c: scored[0].c };
   }
 
   function aiMove() {
@@ -1321,6 +2479,7 @@ var Store = {
   document.getElementById("gomokuRestart").addEventListener("click", restart);
   document.getElementById("gomokuUndo").addEventListener("click", undo);
   modeEl.addEventListener("change", restart);
+  if (diffEl) diffEl.addEventListener("change", restart);
 
   initBoard();
   setupCanvas();
@@ -1329,105 +2488,1261 @@ var Store = {
 })();
 
 /* ============================================================
-   5. 屏幕尺子
+   中国象棋规则引擎（XQ，纯逻辑，可单独测试，含静态搜索）
+   ============================================================ */
+/*
+ * _xiangqi.js —— 中国象棋纯逻辑引擎（ES5，无 DOM，无外部依赖）
+ * =============================================================
+ * 坐标约定
+ *   board[row][col]：10 行 × 9 列的二维数组。
+ *   row 0 在最上方（黑方底线），row 9 在最下方（红方底线）。
+ *   每格为 0（空），或棋子对象 { s: 1|2, t: "K" }。
+ *     s = 1 红方（在下方，向上走，row 递减）
+ *     s = 2 黑方（在上方，向下走，row 递增）
+ *   棋子类型：K 帅/将、A 仕/士、B 相/象、N 马、R 车、C 炮、P 兵/卒。
+ *   局面 state = { board: board, turn: 1 }，turn 表示轮到谁走（1 = 红，2 = 黑）。
+ *
+ * 对外 API（挂到全局 XQ 上；Node 下同时写入 module.exports 与 global.XQ）
+ *   XQ.initial()                    返回新的初始局面 { board, turn: 1 }（红先）
+ *   XQ.clone(state)                 深拷贝局面
+ *   XQ.moves(state, side)           该方全部合法着法 [{fr,fc,tr,tc}]（已过滤送将/照面）
+ *   XQ.move(state, mv)              就地执行着法，返回 { captured: 被吃棋子或 0 }，并切换 turn
+ *   XQ.undo(state, mv, captured)    撤销着法（captured 可传 move 的返回值或其 .captured）
+ *   XQ.inCheck(state, side)         该方是否被将军（含“飞将”直线攻击）
+ *   XQ.kingPos(state, side)         该方将/帅位置 [r,c]；不存在返回 null
+ *   XQ.gameOver(state)              null 或 { winner: 1|2, reason: "checkmate"|"stalemate" }
+ *   XQ.evaluate(state, side)        以该方为视角的局面分（内部红正黑负，返回相对分）
+ *   XQ.bestMove(state, side, depth) negamax + alpha-beta + 静态搜索，返回合法着法；无着返回 null
+ *   XQ.VALUE                        子力价值表（P 基础 100，过河按 200 计）
+ *   XQ.PIECE_NAMES                  棋子中文名（前端绘图用）
+ *
+ * 规则：完整中国象棋规则（九宫、象眼、马腿、炮架、兵过河、不许送将、飞将、困毙判负）。
+ */
+
+(function (globalObj) {
+  "use strict";
+
+  var RED = 1;
+  var BLACK = 2;
+  var INF = 1000000000;
+  var MATE = 1000000;
+
+  var VALUE = {
+    K: 1000000,
+    R: 900,
+    C: 450,
+    N: 400,
+    B: 200,
+    A: 200,
+    P: 100
+  };
+
+  var PIECE_NAMES = {
+    1: { K: "帅", A: "仕", B: "相", N: "马", R: "车", C: "炮", P: "兵" },
+    2: { K: "将", A: "士", B: "象", N: "马", R: "车", C: "炮", P: "卒" }
+  };
+
+  var KING_DIRS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  var ADVISOR_DIRS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  var ELEPHANT_DIRS = [[-2, -2], [-2, 2], [2, -2], [2, 2]];
+  var KNIGHT_DIRS = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+
+  /* ---------- 着法编码：fr*1000 + fc*100 + tr*10 + tc，搜索内部用整数 ---------- */
+
+  function enc(fr, fc, tr, tc) {
+    return fr * 1000 + fc * 100 + tr * 10 + tc;
+  }
+  function mfr(m) { return (m / 1000) | 0; }
+  function mfc(m) { return ((m / 100) | 0) % 10; }
+  function mtr(m) { return ((m / 10) | 0) % 10; }
+  function mtc(m) { return m % 10; }
+
+  function emptyBoard() {
+    var board = [];
+    var r, c, row;
+    for (r = 0; r < 10; r++) {
+      row = [];
+      for (c = 0; c < 9; c++) {
+        row.push(0);
+      }
+      board.push(row);
+    }
+    return board;
+  }
+
+  function findKing(board, side) {
+    var r, c, p;
+    for (r = 0; r < 10; r++) {
+      for (c = 0; c < 9; c++) {
+        p = board[r][c];
+        if (p && p.t === "K" && p.s === side) {
+          return [r, c];
+        }
+      }
+    }
+    return null;
+  }
+
+  function inPalace(side, r, c) {
+    if (c < 3 || c > 5) {
+      return false;
+    }
+    if (side === RED) {
+      return r >= 7 && r <= 9;
+    }
+    return r >= 0 && r <= 2;
+  }
+
+  /* ---------------------------- 着法生成 ---------------------------- */
+
+  function genKing(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 4; i++) {
+      d = KING_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      if (!inPalace(side, nr, nc)) {
+        continue;
+      }
+      q = board[nr][nc];
+      if (q && q.s === side) {
+        continue;
+      }
+      out.push(enc(r, c, nr, nc));
+    }
+  }
+
+  function genAdvisor(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 4; i++) {
+      d = ADVISOR_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      if (!inPalace(side, nr, nc)) {
+        continue;
+      }
+      q = board[nr][nc];
+      if (q && q.s === side) {
+        continue;
+      }
+      out.push(enc(r, c, nr, nc));
+    }
+  }
+
+  function genElephant(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 4; i++) {
+      d = ELEPHANT_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      if (nr < 0 || nr > 9 || nc < 0 || nc > 8) {
+        continue;
+      }
+      /* 不能过河：红方 row5-9，黑方 row0-4 */
+      if (side === RED) {
+        if (nr < 5) {
+          continue;
+        }
+      } else {
+        if (nr > 4) {
+          continue;
+        }
+      }
+      /* 塞象眼 */
+      if (board[r + d[0] / 2][c + d[1] / 2] !== 0) {
+        continue;
+      }
+      q = board[nr][nc];
+      if (q && q.s === side) {
+        continue;
+      }
+      out.push(enc(r, c, nr, nc));
+    }
+  }
+
+  function genKnight(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 8; i++) {
+      d = KNIGHT_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      if (nr < 0 || nr > 9 || nc < 0 || nc > 8) {
+        continue;
+      }
+      /* 蹩马腿：紧贴马、朝目标方向的那一格 */
+      if (d[0] === -2) {
+        if (board[r - 1][c] !== 0) {
+          continue;
+        }
+      } else if (d[0] === 2) {
+        if (board[r + 1][c] !== 0) {
+          continue;
+        }
+      } else if (d[1] === -2) {
+        if (board[r][c - 1] !== 0) {
+          continue;
+        }
+      } else {
+        if (board[r][c + 1] !== 0) {
+          continue;
+        }
+      }
+      q = board[nr][nc];
+      if (q && q.s === side) {
+        continue;
+      }
+      out.push(enc(r, c, nr, nc));
+    }
+  }
+
+  function genRook(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 4; i++) {
+      d = KING_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      while (nr >= 0 && nr <= 9 && nc >= 0 && nc <= 8) {
+        q = board[nr][nc];
+        if (q === 0) {
+          out.push(enc(r, c, nr, nc));
+        } else {
+          if (q.s !== side) {
+            out.push(enc(r, c, nr, nc));
+          }
+          break;
+        }
+        nr += d[0];
+        nc += d[1];
+      }
+    }
+  }
+
+  function genCannon(board, side, r, c, out) {
+    var i, d, nr, nc, q;
+    for (i = 0; i < 4; i++) {
+      d = KING_DIRS[i];
+      nr = r + d[0];
+      nc = c + d[1];
+      /* 不吃子时同车 */
+      while (nr >= 0 && nr <= 9 && nc >= 0 && nc <= 8 && board[nr][nc] === 0) {
+        out.push(enc(r, c, nr, nc));
+        nr += d[0];
+        nc += d[1];
+      }
+      if (nr < 0 || nr > 9 || nc < 0 || nc > 8) {
+        continue;
+      }
+      /* board[nr][nc] 为炮架，越过它继续找第一个子 */
+      nr += d[0];
+      nc += d[1];
+      while (nr >= 0 && nr <= 9 && nc >= 0 && nc <= 8 && board[nr][nc] === 0) {
+        nr += d[0];
+        nc += d[1];
+      }
+      if (nr >= 0 && nr <= 9 && nc >= 0 && nc <= 8) {
+        q = board[nr][nc];
+        if (q && q.s !== side) {
+          out.push(enc(r, c, nr, nc));
+        }
+      }
+    }
+  }
+
+  function genPawn(board, side, r, c, out) {
+    var q;
+    var fr = side === RED ? r - 1 : r + 1;
+    if (fr >= 0 && fr <= 9) {
+      q = board[fr][c];
+      if (!q || q.s !== side) {
+        out.push(enc(r, c, fr, c));
+      }
+    }
+    /* 过河后才能横走：红方 row<=4，黑方 row>=5 */
+    var crossed = side === RED ? r <= 4 : r >= 5;
+    if (crossed) {
+      if (c > 0) {
+        q = board[r][c - 1];
+        if (!q || q.s !== side) {
+          out.push(enc(r, c, r, c - 1));
+        }
+      }
+      if (c < 8) {
+        q = board[r][c + 1];
+        if (!q || q.s !== side) {
+          out.push(enc(r, c, r, c + 1));
+        }
+      }
+    }
+  }
+
+  /* 生成伪合法着法（未过滤己方被将军） */
+  function genPseudo(board, side, out) {
+    var r, c, p;
+    for (r = 0; r < 10; r++) {
+      for (c = 0; c < 9; c++) {
+        p = board[r][c];
+        if (!p || p.s !== side) {
+          continue;
+        }
+        if (p.t === "K") {
+          genKing(board, side, r, c, out);
+        } else if (p.t === "A") {
+          genAdvisor(board, side, r, c, out);
+        } else if (p.t === "B") {
+          genElephant(board, side, r, c, out);
+        } else if (p.t === "N") {
+          genKnight(board, side, r, c, out);
+        } else if (p.t === "R") {
+          genRook(board, side, r, c, out);
+        } else if (p.t === "C") {
+          genCannon(board, side, r, c, out);
+        } else if (p.t === "P") {
+          genPawn(board, side, r, c, out);
+        }
+      }
+    }
+    return out;
+  }
+
+  /* ------------------------ 攻击判定 / 将军 ------------------------ */
+
+  /*
+   * 判断 (kr,kc) 处该方将/帅是否被攻击。
+   * 包含：车、炮（恰一炮架）、马（马腿）、兵/卒、对方将帅的贴身攻击与“飞将”。
+   */
+  function kingAttacked(board, side, kr, kc) {
+    var enemy = side === RED ? BLACK : RED;
+    var i, d, dr, dc, r, c, p, r2, c2;
+
+    for (i = 0; i < 4; i++) {
+      d = KING_DIRS[i];
+      dr = d[0];
+      dc = d[1];
+      r = kr + dr;
+      c = kc + dc;
+      while (r >= 0 && r <= 9 && c >= 0 && c <= 8 && board[r][c] === 0) {
+        r += dr;
+        c += dc;
+      }
+      if (r < 0 || r > 9 || c < 0 || c > 8) {
+        continue;
+      }
+      p = board[r][c];
+      if (p && p.s === enemy) {
+        if (p.t === "R") {
+          return true;
+        }
+        if (p.t === "K") {
+          if (dc === 0) {
+            return true; /* 飞将：同列且中间无子 */
+          }
+          if (r - kr === dr && c - kc === dc) {
+            return true; /* 贴身一步 */
+          }
+        }
+      }
+      /* 炮：越过第一个子（炮架）后再遇到的第一个子若是敌炮则被将 */
+      r2 = r + dr;
+      c2 = c + dc;
+      while (r2 >= 0 && r2 <= 9 && c2 >= 0 && c2 <= 8 && board[r2][c2] === 0) {
+        r2 += dr;
+        c2 += dc;
+      }
+      if (r2 >= 0 && r2 <= 9 && c2 >= 0 && c2 <= 8) {
+        p = board[r2][c2];
+        if (p && p.s === enemy && p.t === "C") {
+          return true;
+        }
+      }
+    }
+
+    /* 马 */
+    for (i = 0; i < 8; i++) {
+      d = KNIGHT_DIRS[i];
+      dr = d[0];
+      dc = d[1];
+      r = kr + dr;
+      c = kc + dc;
+      if (r < 0 || r > 9 || c < 0 || c > 8) {
+        continue;
+      }
+      p = board[r][c];
+      if (!p || p.s !== enemy || p.t !== "N") {
+        continue;
+      }
+      if (dr === -2) {
+        if (board[r + 1][c] === 0) {
+          return true;
+        }
+      } else if (dr === 2) {
+        if (board[r - 1][c] === 0) {
+          return true;
+        }
+      } else if (dc === -2) {
+        if (board[r][c + 1] === 0) {
+          return true;
+        }
+      } else {
+        if (board[r][c - 1] === 0) {
+          return true;
+        }
+      }
+    }
+
+    /* 兵/卒 */
+    if (enemy === RED) {
+      if (kr + 1 <= 9) {
+        p = board[kr + 1][kc];
+        if (p && p.s === RED && p.t === "P") {
+          return true;
+        }
+      }
+      if (kr <= 4) {
+        if (kc > 0) {
+          p = board[kr][kc - 1];
+          if (p && p.s === RED && p.t === "P") {
+            return true;
+          }
+        }
+        if (kc < 8) {
+          p = board[kr][kc + 1];
+          if (p && p.s === RED && p.t === "P") {
+            return true;
+          }
+        }
+      }
+    } else {
+      if (kr - 1 >= 0) {
+        p = board[kr - 1][kc];
+        if (p && p.s === BLACK && p.t === "P") {
+          return true;
+        }
+      }
+      if (kr >= 5) {
+        if (kc > 0) {
+          p = board[kr][kc - 1];
+          if (p && p.s === BLACK && p.t === "P") {
+            return true;
+          }
+        }
+        if (kc < 8) {
+          p = board[kr][kc + 1];
+          if (p && p.s === BLACK && p.t === "P") {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  /* ---------------------------- 走子 / 悔子 ---------------------------- */
+
+  function applyMove(board, m) {
+    var fr = mfr(m);
+    var fc = mfc(m);
+    var tr = mtr(m);
+    var tc = mtc(m);
+    var p = board[fr][fc];
+    var cap = board[tr][tc];
+    board[tr][tc] = p;
+    board[fr][fc] = 0;
+    return cap;
+  }
+
+  function revertMove(board, m, cap) {
+    var fr = mfr(m);
+    var fc = mfc(m);
+    var tr = mtr(m);
+    var tc = mtc(m);
+    var p = board[tr][tc];
+    board[fr][fc] = p;
+    board[tr][tc] = cap ? cap : 0;
+  }
+
+  /* ------------------------------ 评估 ------------------------------ */
+
+  /* 固定正负：红正黑负；返回 side 视角的分数 */
+  function evaluateBoard(board, side) {
+    var score = 0;
+    var r, c, p, v, adv;
+    for (r = 0; r < 10; r++) {
+      for (c = 0; c < 9; c++) {
+        p = board[r][c];
+        if (!p) {
+          continue;
+        }
+        v = VALUE[p.t];
+        if (p.t === "P") {
+          if (p.s === RED) {
+            if (r <= 4) {
+              v = 200;
+            }
+            v += (6 - r) * 3;
+          } else {
+            if (r >= 5) {
+              v = 200;
+            }
+            v += (r - 3) * 3;
+          }
+        } else if (p.t === "N" || p.t === "C") {
+          adv = c > 4 ? c - 4 : 4 - c;
+          v += (4 - adv) * 4;
+        }
+        if (p.s === RED) {
+          score += v;
+        } else {
+          score -= v;
+        }
+      }
+    }
+    return side === RED ? score : -score;
+  }
+
+  /* ------------------------------ 搜索 ------------------------------ */
+
+  function moveScore(board, m) {
+    var fr = mfr(m);
+    var fc = mfc(m);
+    var tr = mtr(m);
+    var tc = mtc(m);
+    var victim = board[tr][tc];
+    if (!victim) {
+      return 0;
+    }
+    var attacker = board[fr][fc];
+    return 100000 + VALUE[victim.t] * 4 - VALUE[attacker.t];
+  }
+
+  /* 插入排序：吃子优先（按 MVV-LVA 降序） */
+  function orderMoves(board, list) {
+    var n = list.length;
+    var i, j, m, s;
+    var scores = [];
+    for (i = 0; i < n; i++) {
+      scores.push(moveScore(board, list[i]));
+    }
+    for (i = 1; i < n; i++) {
+      m = list[i];
+      s = scores[i];
+      j = i - 1;
+      while (j >= 0 && scores[j] < s) {
+        list[j + 1] = list[j];
+        scores[j + 1] = scores[j];
+        j--;
+      }
+      list[j + 1] = m;
+      scores[j + 1] = s;
+    }
+  }
+
+  /*
+   * 静态搜索（quiescence）：主搜索到达叶子时继续把"吃子"串走完，
+   * 避免在兑换中途停下来导致视界效应（例如吃一子后被反吃却看不出来）。
+   * 被将军时不使用 stand-pat，必须走完应将着法，否则会把被将死当成普通局面。
+   */
+  var QMAX = 8;    /* 吃子串最大延伸层数 */
+  var QHARD = 12;  /* 应将串的硬上限，防止长将递归失控 */
+
+  function quiesce(state, side, alpha, beta, ply, qply) {
+    var board = state.board;
+    var k = findKing(board, side);
+    var kr = k ? k[0] : -1;
+    var kc = k ? k[1] : -1;
+    var checked = kr >= 0 ? kingAttacked(board, side, kr, kc) : false;
+
+    if (!checked) {
+      var stand = evaluateBoard(board, side);
+      if (stand >= beta) {
+        return beta;
+      }
+      if (stand > alpha) {
+        alpha = stand;
+      }
+      if (qply >= QMAX) {
+        return alpha;
+      }
+    } else if (qply >= QHARD) {
+      return evaluateBoard(board, side);
+    }
+
+    var list = [];
+    genPseudo(board, side, list);
+    if (!checked) {
+      var caps = [];
+      var ci, cm;
+      for (ci = 0; ci < list.length; ci++) {
+        cm = list[ci];
+        if (board[mtr(cm)][mtc(cm)]) {
+          caps.push(cm);
+        }
+      }
+      if (!caps.length) {
+        return alpha;
+      }
+      list = caps;
+    }
+    orderMoves(board, list);
+
+    var enemy = side === RED ? BLACK : RED;
+    var any = false;
+    var i, m, cap, p, nkr, nkc, tr, tc, score;
+    for (i = 0; i < list.length; i++) {
+      m = list[i];
+      cap = applyMove(board, m);
+      if (kr >= 0) {
+        tr = mtr(m);
+        tc = mtc(m);
+        p = board[tr][tc];
+        if (p.t === "K" && p.s === side) {
+          nkr = tr;
+          nkc = tc;
+        } else {
+          nkr = kr;
+          nkc = kc;
+        }
+        if (kingAttacked(board, side, nkr, nkc)) {
+          revertMove(board, m, cap);
+          continue;
+        }
+      }
+      any = true;
+      score = -quiesce(state, enemy, -beta, -alpha, ply + 1, qply + 1);
+      revertMove(board, m, cap);
+      if (score >= beta) {
+        return beta;
+      }
+      if (score > alpha) {
+        alpha = score;
+      }
+    }
+    if (checked && !any) {
+      return -(MATE - ply);
+    }
+    return alpha;
+  }
+
+  function negamax(state, side, depth, alpha, beta, ply) {
+    if (depth <= 0) {
+      return quiesce(state, side, alpha, beta, ply, 0);
+    }
+    var board = state.board;
+    var k = findKing(board, side);
+    var kr = k ? k[0] : -1;
+    var kc = k ? k[1] : -1;
+    var list = [];
+    genPseudo(board, side, list);
+    orderMoves(board, list);
+
+    var best = -INF;
+    var any = false;
+    var i, m, cap, p, nkr, nkc, tr, tc, score;
+    var enemy = side === RED ? BLACK : RED;
+
+    for (i = 0; i < list.length; i++) {
+      m = list[i];
+      cap = applyMove(board, m);
+      if (kr >= 0) {
+        tr = mtr(m);
+        tc = mtc(m);
+        p = board[tr][tc];
+        if (p.t === "K" && p.s === side) {
+          nkr = tr;
+          nkc = tc;
+        } else {
+          nkr = kr;
+          nkc = kc;
+        }
+        if (kingAttacked(board, side, nkr, nkc)) {
+          revertMove(board, m, cap);
+          continue;
+        }
+      }
+      any = true;
+      score = -negamax(state, enemy, depth - 1, -beta, -alpha, ply + 1);
+      revertMove(board, m, cap);
+      if (score > best) {
+        best = score;
+      }
+      if (score > alpha) {
+        alpha = score;
+      }
+      if (alpha >= beta) {
+        break;
+      }
+    }
+    if (!any) {
+      /* 无合法着法即负（将死或困毙，中国象棋均判负） */
+      return -(MATE - ply);
+    }
+    return best;
+  }
+
+  /* ------------------------------ 公开 API ------------------------------ */
+
+  var XQ = {};
+
+  XQ.VALUE = VALUE;
+  XQ.PIECE_NAMES = PIECE_NAMES;
+
+  XQ.initial = function () {
+    var board = emptyBoard();
+    var back = ["R", "N", "B", "A", "K", "A", "B", "N", "R"];
+    var i;
+    for (i = 0; i < 9; i++) {
+      board[0][i] = { s: BLACK, t: back[i] };
+      board[9][i] = { s: RED, t: back[i] };
+    }
+    board[2][1] = { s: BLACK, t: "C" };
+    board[2][7] = { s: BLACK, t: "C" };
+    board[7][1] = { s: RED, t: "C" };
+    board[7][7] = { s: RED, t: "C" };
+    for (i = 0; i < 9; i += 2) {
+      board[3][i] = { s: BLACK, t: "P" };
+      board[6][i] = { s: RED, t: "P" };
+    }
+    return { board: board, turn: 1 };
+  };
+
+  XQ.clone = function (state) {
+    var b = state.board;
+    var nb = [];
+    var r, c, p, row;
+    for (r = 0; r < 10; r++) {
+      row = [];
+      for (c = 0; c < 9; c++) {
+        p = b[r][c];
+        row.push(p ? { s: p.s, t: p.t } : 0);
+      }
+      nb.push(row);
+    }
+    return { board: nb, turn: state.turn };
+  };
+
+  XQ.moves = function (state, side) {
+    side = side === BLACK ? BLACK : RED;
+    var board = state.board;
+    var k = findKing(board, side);
+    var kr = k ? k[0] : -1;
+    var kc = k ? k[1] : -1;
+    var list = [];
+    var res = [];
+    var i, m, cap, p, nkr, nkc, fr, fc, tr, tc;
+
+    genPseudo(board, side, list);
+    for (i = 0; i < list.length; i++) {
+      m = list[i];
+      fr = mfr(m);
+      fc = mfc(m);
+      tr = mtr(m);
+      tc = mtc(m);
+      cap = applyMove(board, m);
+      if (kr >= 0) {
+        p = board[tr][tc];
+        if (p.t === "K" && p.s === side) {
+          nkr = tr;
+          nkc = tc;
+        } else {
+          nkr = kr;
+          nkc = kc;
+        }
+        if (kingAttacked(board, side, nkr, nkc)) {
+          revertMove(board, m, cap);
+          continue;
+        }
+      }
+      revertMove(board, m, cap);
+      res.push({ fr: fr, fc: fc, tr: tr, tc: tc });
+    }
+    return res;
+  };
+
+  XQ.move = function (state, mv) {
+    var board = state.board;
+    var m = enc(mv.fr, mv.fc, mv.tr, mv.tc);
+    var cap = applyMove(board, m);
+    var p = board[mv.tr][mv.tc];
+    if (p) {
+      state.turn = p.s === RED ? BLACK : RED;
+    }
+    return { captured: cap };
+  };
+
+  XQ.undo = function (state, mv, captured) {
+    if (captured && typeof captured === "object" && captured.captured !== undefined) {
+      captured = captured.captured;
+    }
+    var board = state.board;
+    var p = board[mv.tr][mv.tc];
+    var m = enc(mv.fr, mv.fc, mv.tr, mv.tc);
+    revertMove(board, m, captured || 0);
+    if (p) {
+      state.turn = p.s;
+    }
+  };
+
+  XQ.kingPos = function (state, side) {
+    var k = findKing(state.board, side === BLACK ? BLACK : RED);
+    return k ? [k[0], k[1]] : null;
+  };
+
+  XQ.inCheck = function (state, side) {
+    side = side === BLACK ? BLACK : RED;
+    var k = findKing(state.board, side);
+    if (!k) {
+      return false;
+    }
+    return kingAttacked(state.board, side, k[0], k[1]);
+  };
+
+  XQ.gameOver = function (state) {
+    var side = state.turn === BLACK ? BLACK : RED;
+    var list = XQ.moves(state, side);
+    if (list.length > 0) {
+      return null;
+    }
+    var checked = XQ.inCheck(state, side);
+    return {
+      winner: side === RED ? BLACK : RED,
+      reason: checked ? "checkmate" : "stalemate"
+    };
+  };
+
+  XQ.evaluate = function (state, side) {
+    return evaluateBoard(state.board, side === BLACK ? BLACK : RED);
+  };
+
+  XQ.bestMove = function (state, side, depth) {
+    side = side === BLACK ? BLACK : RED;
+    depth = depth | 0;
+    if (depth < 1) {
+      depth = 1;
+    }
+    var board = state.board;
+    var k = findKing(board, side);
+    var kr = k ? k[0] : -1;
+    var kc = k ? k[1] : -1;
+    var list = [];
+    genPseudo(board, side, list);
+    orderMoves(board, list);
+
+    var enemy = side === RED ? BLACK : RED;
+    var alpha = -INF;
+    var beta = INF;
+    var bestScore = -INF;
+    var bestM = -1;
+    var any = false;
+    var i, m, cap, p, nkr, nkc, tr, tc, score;
+
+    for (i = 0; i < list.length; i++) {
+      m = list[i];
+      cap = applyMove(board, m);
+      if (kr >= 0) {
+        tr = mtr(m);
+        tc = mtc(m);
+        p = board[tr][tc];
+        if (p.t === "K" && p.s === side) {
+          nkr = tr;
+          nkc = tc;
+        } else {
+          nkr = kr;
+          nkc = kc;
+        }
+        if (kingAttacked(board, side, nkr, nkc)) {
+          revertMove(board, m, cap);
+          continue;
+        }
+      }
+      any = true;
+      score = -negamax(state, enemy, depth - 1, -beta, -alpha, 1);
+      revertMove(board, m, cap);
+      if (score > bestScore) {
+        bestScore = score;
+        bestM = m;
+      }
+      if (score > alpha) {
+        alpha = score;
+      }
+    }
+    if (!any) {
+      return null;
+    }
+    return { fr: mfr(bestM), fc: mfc(bestM), tr: mtr(bestM), tc: mtc(bestM) };
+  };
+
+  XQ.enc = enc;
+
+  /* ------------------------------ 导出 ------------------------------ */
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = XQ;
+  }
+  if (globalObj) {
+    globalObj.XQ = XQ;
+  }
+}(typeof window !== "undefined" ? window : (typeof global !== "undefined" ? global : this)));
+
+/* ============================================================
+   5. 中国象棋（规则引擎 XQ 在上方）
+   ============================================================ */
+(function () {
+  var canvas = document.getElementById("xqCanvas");
+  if (!canvas) return;
+  if (!window.XQ) return; // 引擎未加载时静默跳过，避免影响页面其它模块
+  var ctx = canvas.getContext("2d");
+  var statusEl = document.getElementById("xqStatus");
+  var modeEl = document.getElementById("xqMode");
+  var diffEl = document.getElementById("xqDiff");
+
+  var COLS = 9, ROWS = 10;
+  var W = 492, H = 546, PAD = 30;
+  var GAPX = (W - PAD * 2) / (COLS - 1);
+  var GAPY = (H - PAD * 2) / (ROWS - 1);
+  var RAD = 21;
+
+  var state = null;
+  var history = [];
+  var sel = null;
+  var legal = [];
+  var over = false;
+  var aiTimer = null;
+
+  function setupCanvas() {
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function px(c) { return PAD + c * GAPX; }
+  function py(r) { return PAD + r * GAPY; }
+
+  function initGame() {
+    if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+    state = XQ.initial();
+    history = [];
+    sel = null;
+    legal = [];
+    over = false;
+    draw();
+    updateStatus();
+  }
+
+  function sideName(s) { return s === 1 ? "🔴 红方" : "⚫ 黑方"; }
+
+  function updateStatus() {
+    if (!state || over) return;
+    var checking = XQ.inCheck(state, state.turn);
+    if (modeEl.value === "ai" && state.turn === 2) {
+      statusEl.textContent = "AI 思考中…";
+      return;
+    }
+    statusEl.textContent = sideName(state.turn) + "回合" + (checking ? "（被将军）" : "");
+  }
+
+  function drawGrid() {
+    ctx.fillStyle = "#e8cb92";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = "rgba(90,60,20,.6)";
+    ctx.lineWidth = 1;
+
+    for (var r = 0; r < ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(px(0), py(r));
+      ctx.lineTo(px(COLS - 1), py(r));
+      ctx.stroke();
+    }
+    for (var c = 0; c < COLS; c++) {
+      ctx.beginPath();
+      if (c === 0 || c === COLS - 1) {
+        ctx.moveTo(px(c), py(0));
+        ctx.lineTo(px(c), py(ROWS - 1));
+      } else {
+        ctx.moveTo(px(c), py(0));
+        ctx.lineTo(px(c), py(4));
+        ctx.moveTo(px(c), py(5));
+        ctx.lineTo(px(c), py(ROWS - 1));
+      }
+      ctx.stroke();
+    }
+
+    // 九宫斜线
+    ctx.beginPath();
+    ctx.moveTo(px(3), py(0)); ctx.lineTo(px(5), py(2));
+    ctx.moveTo(px(5), py(0)); ctx.lineTo(px(3), py(2));
+    ctx.moveTo(px(3), py(7)); ctx.lineTo(px(5), py(9));
+    ctx.moveTo(px(5), py(7)); ctx.lineTo(px(3), py(9));
+    ctx.stroke();
+
+    // 楚河汉界
+    ctx.fillStyle = "rgba(90,60,20,.45)";
+    ctx.font = "22px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    var midY = (py(4) + py(5)) / 2;
+    ctx.fillText("楚 河", px(2), midY);
+    ctx.fillText("汉 界", px(6), midY);
+  }
+
+  function drawPiece(r, c, pc) {
+    var x = px(c), y = py(r);
+    var isRed = pc.s === 1;
+    var edge = isRed ? "#b3272f" : "#22262e";
+    var face = "#f8ecd0";
+
+    ctx.beginPath();
+    ctx.arc(x, y, RAD, 0, Math.PI * 2);
+    ctx.fillStyle = face;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = edge;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, RAD - 4, 0, Math.PI * 2);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = edge + "88";
+    ctx.stroke();
+
+    var names = XQ.PIECE_NAMES[pc.s];
+    ctx.fillStyle = edge;
+    ctx.font = "bold 24px 'KaiTi', 'STKaiti', serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(names[pc.t], x, y + 1);
+  }
+
+  function draw() {
+    drawGrid();
+
+    if (sel) {
+      // 选中棋子的高亮 + 合法落点提示
+      ctx.strokeStyle = "#3e63dd";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(px(sel[1]), py(sel[0]), RAD + 3, 0, Math.PI * 2);
+      ctx.stroke();
+      for (var i = 0; i < legal.length; i++) {
+        var mv = legal[i];
+        var tx = px(mv.tc), ty = py(mv.tr);
+        var target = state.board[mv.tr][mv.tc];
+        if (target) {
+          ctx.strokeStyle = "rgba(62,99,221,.85)";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(tx, ty, RAD + 1, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = "rgba(62,99,221,.55)";
+          ctx.beginPath();
+          ctx.arc(tx, ty, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    if (history.length) {
+      var last = history[history.length - 1].mv;
+      ctx.strokeStyle = "rgba(229,72,77,.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(px(last.tc), py(last.tr), RAD + 4, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (state.board[r][c]) drawPiece(r, c, state.board[r][c]);
+      }
+    }
+  }
+
+  function doMove(mv) {
+    var captured = XQ.move(state, mv);
+    history.push({ mv: mv, captured: captured });
+    sel = null;
+    legal = [];
+    draw();
+
+    var go = XQ.gameOver(state);
+    if (go) {
+      over = true;
+      statusEl.textContent = go.winner === 1 ? "🔴 红方获胜！🎉" : "⚫ 黑方获胜！🎉";
+      return;
+    }
+    updateStatus();
+    maybeAI();
+  }
+
+  function maybeAI() {
+    if (over || modeEl.value !== "ai" || state.turn !== 2) return;
+    statusEl.textContent = "AI 思考中…";
+    aiTimer = setTimeout(function () {
+      aiTimer = null;
+      if (over || !state || state.turn !== 2) return;
+      var depth = Number(diffEl.value) || 2;
+      var mv = XQ.bestMove(state, 2, depth);
+      if (!mv) {
+        over = true;
+        statusEl.textContent = "🔴 红方获胜！🎉";
+        return;
+      }
+      doMove(mv);
+    }, 160);
+  }
+
+  canvas.addEventListener("click", function (e) {
+    if (over || !state) return;
+    if (modeEl.value === "ai" && state.turn === 2) return;
+
+    var rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    var x = (e.clientX - rect.left) / rect.width * W;
+    var y = (e.clientY - rect.top) / rect.height * H;
+    var c = Math.round((x - PAD) / GAPX);
+    var r = Math.round((y - PAD) / GAPY);
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    if (Math.hypot(x - px(c), y - py(r)) > GAPX * 0.5) return;
+
+    if (sel) {
+      for (var i = 0; i < legal.length; i++) {
+        if (legal[i].tr === r && legal[i].tc === c) {
+          doMove(legal[i]);
+          return;
+        }
+      }
+    }
+
+    var pc = state.board[r][c];
+    if (pc && pc.s === state.turn) {
+      sel = [r, c];
+      legal = XQ.moves(state, state.turn).filter(function (m) {
+        return m.fr === r && m.fc === c;
+      });
+      draw();
+      return;
+    }
+
+    sel = null;
+    legal = [];
+    draw();
+  });
+
+  function undo() {
+    if (!history.length) return;
+    var steps = (modeEl.value === "ai" && history.length >= 2) ? 2 : 1;
+    for (var k = 0; k < steps && history.length; k++) {
+      var h = history.pop();
+      XQ.undo(state, h.mv, h.captured);
+    }
+    over = false;
+    sel = null;
+    legal = [];
+    draw();
+    updateStatus();
+    maybeAI();
+  }
+
+  document.getElementById("xqRestart").addEventListener("click", initGame);
+  document.getElementById("xqUndo").addEventListener("click", undo);
+  modeEl.addEventListener("change", initGame);
+  diffEl.addEventListener("change", initGame);
+
+  setupCanvas();
+  initGame();
+  // 调试钩子：自动化测试/排查时读取当前局面（不影响正常使用）
+  window.__xqGet = function () { return state; };
+})();
+
+/* ============================================================
+   5. 15 厘米直尺（按 iQOO Neo9 屏幕标定，无需实物校准）
    ============================================================ */
 (function () {
   var canvas = document.getElementById("rulerCanvas");
   if (!canvas) return;
   var infoEl = document.getElementById("rulerInfo");
-  var calCard = document.getElementById("calCard");
-  var calSlider = document.getElementById("calSlider");
-  var calValue = document.getElementById("calValue");
 
-  var CARD_MM = 85.6;
-  var CARD_RATIO = 53.98 / 85.6;
-  var DEFAULT_PX_PER_MM = 96 / 25.4;
+  // iQOO Neo9：6.78 英寸 AMOLED，2800 × 1260（20:9），
+  // 换算得屏幕物理尺寸约 70.6mm 宽 × 157.0mm 长（含圆角内可视区）。
+  var PORTRAIT_W_MM = 70.6;   // 竖屏时视口宽 = 屏幕短边
+  var LANDSCAPE_W_MM = 157.0; // 横屏时视口宽 = 屏幕长边
+  var RULER_CM = 15;          // 中国标准 15 厘米直尺
+  var MARGIN = 14;            // 两端留白（px）
 
-  var pxPerMm = DEFAULT_PX_PER_MM;
-  var saved = parseFloat(Store.get("ruler-pxmm"));
-  if (isFinite(saved) && saved > 1) pxPerMm = saved;
-
-  function syncCalibrationUI() {
-    var w = pxPerMm * CARD_MM;
-    calCard.style.width = w + "px";
-    calCard.style.height = (w * CARD_RATIO) + "px";
-    // 卡片可能比滑块默认范围更宽/更窄（手机 px/mm 更高），这里把滑块范围一起撑开，
-    // 否则浏览器会把 value 夹紧到边界，导致显示值与实际校准值不一致。
-    calSlider.min = String(Math.min(120, Math.round(w)));
-    calSlider.max = String(Math.max(700, Math.round(w)));
-    calSlider.value = String(Math.round(w));
-    calValue.textContent = Math.round(w) + " px";
-    infoEl.textContent = "1 cm ≈ " + (pxPerMm * 10).toFixed(1) + " px";
+  function isLandscapeScreen() {
+    // 用屏幕方向而不是窗口比例判断：桌面浏览器窗口可能又高又窄，不能当成手机竖屏
+    var so = window.screen && window.screen.orientation;
+    if (so && typeof so.type === "string" && so.type) {
+      return so.type.indexOf("landscape") === 0;
+    }
+    return !!(window.screen && window.screen.width > window.screen.height);
   }
 
-  function drawRuler() {
-    var dpr = window.devicePixelRatio || 1;
-    var cssW = Math.max(120, canvas.clientWidth || 320);
-    var H = 110;
+  function pxPerMm() {
+    var w = document.documentElement.clientWidth || window.innerWidth || 360;
+    var physW = isLandscapeScreen() ? LANDSCAPE_W_MM : PORTRAIT_W_MM;
+    var v = w / physW;
+    if (!isFinite(v) || v <= 0) v = 96 / 25.4; // 极端情况退回 CSS 96dpi
+    return v;
+  }
 
-    canvas.width = Math.round(cssW * dpr);
+  function fmtCm(mm) { return String(mm / 10); }
+
+  function drawRuler() {
+    var ppt = pxPerMm();            // px per mm
+    var dpr = window.devicePixelRatio || 1;
+    var totalMm = RULER_CM * 10;
+    var W = Math.ceil(totalMm * ppt) + MARGIN * 2;
+    var H = 96;
+
+    canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + "px";
     canvas.style.height = H + "px";
 
     var ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, H);
+    ctx.clearRect(0, 0, W, H);
 
-    ctx.strokeStyle = "#8a93a6";
-    ctx.fillStyle = "#8a93a6";
+    var baseY = H - 10;             // 刻度基线在底部
+    var fg = "#8a93a6";
+    ctx.strokeStyle = fg;
+    ctx.fillStyle = fg;
     ctx.textBaseline = "alphabetic";
 
-    // 上方：英寸刻度（1/16 细分）
-    var inStep = pxPerMm * 25.4 / 16;
-    var total16 = Math.floor(cssW / inStep);
-    ctx.font = "11px sans-serif";
-    for (var n = 0; n <= total16; n++) {
-      var x1 = 0.5 + n * inStep;
-      var len = 6;
-      if (n % 16 === 0) len = 30;
-      else if (n % 8 === 0) len = 22;
-      else if (n % 4 === 0) len = 15;
-      else if (n % 2 === 0) len = 10;
-      ctx.lineWidth = (n % 16 === 0) ? 1.5 : 1;
-      ctx.beginPath();
-      ctx.moveTo(x1, 2);
-      ctx.lineTo(x1, 2 + len);
-      ctx.stroke();
-      if (n % 16 === 0 && n > 0) {
-        ctx.textAlign = "left";
-        ctx.fillText(String(n / 16), x1 + 3, 42);
-      }
-    }
-    ctx.textAlign = "left";
-    ctx.fillText("inch", 4, 42);
+    // 基线
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(MARGIN, baseY + 0.5);
+    ctx.lineTo(MARGIN + totalMm * ppt, baseY + 0.5);
+    ctx.stroke();
 
-    // 下方：厘米刻度（毫米细分）
-    var totalMm = Math.floor(cssW / pxPerMm);
     for (var mm = 0; mm <= totalMm; mm++) {
-      var x2 = 0.5 + mm * pxPerMm;
+      var x = MARGIN + mm * ppt;
       var major = mm % 10 === 0;
       var mid = mm % 5 === 0;
-      var h = major ? 26 : mid ? 16 : 9;
+      var len = major ? 28 : mid ? 18 : 10;
       ctx.lineWidth = major ? 1.5 : 1;
       ctx.beginPath();
-      ctx.moveTo(x2, 108);
-      ctx.lineTo(x2, 108 - h);
+      ctx.moveTo(x, baseY);
+      ctx.lineTo(x, baseY - len);
       ctx.stroke();
       if (major) {
-        ctx.textAlign = "center";
-        ctx.fillText(String(mm / 10), x2, 74);
+        ctx.font = "11px sans-serif";
+        ctx.textAlign = mm === 0 ? "left" : "center";
+        ctx.fillText(fmtCm(mm), mm === 0 ? x + 1 : x, baseY - 34);
       }
     }
-    ctx.textAlign = "left";
-    ctx.fillText("cm", 4, 74);
-  }
 
-  calSlider.addEventListener("input", function () {
-    pxPerMm = Number(calSlider.value) / CARD_MM;
-    Store.set("ruler-pxmm", String(pxPerMm));
-    syncCalibrationUI();
-    drawRuler();
-  });
+    // 左下角单位
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("cm", MARGIN, baseY - 46);
+
+    infoEl.textContent = "1 cm = " + (ppt * 10).toFixed(2) + " px　·　15 cm 全长 " +
+      Math.round(totalMm * ppt) + " px　·　按 iQOO Neo9 屏幕标定";
+  }
 
   var resizeTimer = null;
   window.addEventListener("resize", function () {
@@ -1435,7 +3750,6 @@ var Store = {
     resizeTimer = setTimeout(drawRuler, 120);
   });
 
-  syncCalibrationUI();
   drawRuler();
 })();
 
