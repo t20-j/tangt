@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.t20j.toolbox",
+    "sha256_cert_fingerprints": ["58:46:B9:40:13:C8:C0:5D:34:E8:F4:E3:D5:93:6A:02:0E:F8:A9:D0:D2:32:B7:4C:39:AE:78:7A:76:BB:20:8F"]
+  }
+}]
