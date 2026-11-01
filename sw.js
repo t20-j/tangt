@@ -3,7 +3,7 @@
  * 策略：页面导航用「网络优先 + 缓存兜底」，静态资源用「缓存优先」。
  * 改版时把 CACHE 版本号 +1，旧缓存会在 activate 里自动清理。
  */
-var CACHE = "toolbox-v3";
+var CACHE = "toolbox-v5";
 var ASSETS = [
   "./",
   "./index.html",
