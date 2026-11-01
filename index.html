@@ -159,6 +159,7 @@
   .sudoku .cell.bb{border-bottom:2px solid var(--text)}
   .sudoku .cell.last-col{border-right:0}
   .sudoku .cell.last-row{border-bottom:0}
+  .sudoku .cell.given{font-weight:700; color:var(--text)}
   .sudoku .cell.user{color:var(--accent)}
   .sudoku .cell.sel{background:var(--accent-weak)}
   .sudoku .cell.bad{color:var(--danger); background:rgba(229,72,77,.12)}
@@ -714,24 +715,62 @@ var Store = {
     return false;
   }
 
-  // 数解的数量，最多数到 limit 个（用于判断唯一解）
+  // 位掩码里 1 的个数（0~511）
+  var POP = new Uint8Array(512);
+  for (var popI = 1; popI < 512; popI++) POP[popI] = POP[popI >> 1] + (popI & 1);
+
+  // 数解的数量，最多数到 limit 个（用于判断唯一解）。
+  // 用位掩码 + 最小候选格（MRV），并设节点预算，避免困难题把页面卡死；
+  // 超出预算返回 2（当作"不唯一"），调用方会把这格填回去，题目只是稍简单，不会死循环。
   function countSolutions(g, limit) {
+    var rows = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var cols = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    var boxes = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    for (var i = 0; i < 81; i++) {
+      var v0 = g[i];
+      if (!v0) continue;
+      var r0 = (i / 9) | 0, c0 = i % 9, b0 = ((r0 / 3) | 0) * 3 + ((c0 / 3) | 0);
+      rows[r0] |= 1 << (v0 - 1);
+      cols[c0] |= 1 << (v0 - 1);
+      boxes[b0] |= 1 << (v0 - 1);
+    }
     var count = 0;
+    var nodes = 0;
+    var budget = 20000;
+
     function dfs() {
-      if (count >= limit) return;
-      var i = indexOfZero(g);
-      if (i === -1) { count++; return; }
-      for (var v = 1; v <= 9; v++) {
-        if (isValid(g, i, v)) {
-          g[i] = v;
-          dfs();
-          g[i] = 0;
-          if (count >= limit) return;
+      if (count >= limit || nodes > budget) return;
+      nodes++;
+      var bi = -1, bmask = 0, bcnt = 10;
+      for (var p = 0; p < 81; p++) {
+        if (g[p]) continue;
+        var pr = (p / 9) | 0, pc = p % 9;
+        var pb = ((pr / 3) | 0) * 3 + ((pc / 3) | 0);
+        var used = rows[pr] | cols[pc] | boxes[pb];
+        var cnt = 9 - POP[used];
+        if (cnt < bcnt) {
+          bcnt = cnt; bi = p; bmask = used;
+          if (cnt <= 1) break;
         }
+      }
+      if (bi === -1) { count++; return; }
+      if (bcnt === 0) return;
+
+      var br = (bi / 9) | 0, bc = bi % 9;
+      var bb = ((br / 3) | 0) * 3 + ((bc / 3) | 0);
+      for (var val = 1; val <= 9; val++) {
+        var bit = 1 << (val - 1);
+        if (bmask & bit) continue;
+        g[bi] = val;
+        rows[br] |= bit; cols[bc] |= bit; boxes[bb] |= bit;
+        dfs();
+        rows[br] ^= bit; cols[bc] ^= bit; boxes[bb] ^= bit;
+        g[bi] = 0;
+        if (count >= limit || nodes > budget) return;
       }
     }
     dfs();
-    return count;
+    return nodes > budget ? 2 : count;
   }
 
   function makePuzzle(level) {
@@ -1196,14 +1235,28 @@ var Store = {
   function bestMove(me) {
     var opp = 3 - me;
     var cells = candidates();
+    var k, r, c;
+
+    // 先扫一遍：自己能立刻五连就直接赢
+    for (k = 0; k < cells.length; k++) {
+      if (evalPoint(cells[k][0], cells[k][1], me) >= 1000000) {
+        return { r: cells[k][0], c: cells[k][1] };
+      }
+    }
+    // 再扫一遍：对手能立刻五连就必须堵
+    for (k = 0; k < cells.length; k++) {
+      if (evalPoint(cells[k][0], cells[k][1], opp) >= 1000000) {
+        return { r: cells[k][0], c: cells[k][1] };
+      }
+    }
+
     var best = null;
     var bestScore = -1;
-    for (var k = 0; k < cells.length; k++) {
-      var r = cells[k][0], c = cells[k][1];
+    for (k = 0; k < cells.length; k++) {
+      r = cells[k][0];
+      c = cells[k][1];
       var atk = evalPoint(r, c, me);
       var def = evalPoint(r, c, opp);
-      if (atk >= 1000000) return { r: r, c: c };
-      if (def >= 1000000) return { r: r, c: c };
       var s = atk + def * 0.9 + Math.random() * 3;
       if (s > bestScore) { bestScore = s; best = { r: r, c: c }; }
     }
@@ -1234,6 +1287,8 @@ var Store = {
       turn = last.p;
     }
     over = false;
+    // 人机模式下若回退后轮到 AI，必须重新触发它，否则棋局会卡在“AI 思考中…”
+    if (modeEl.value === "ai" && turn === 2) setTimeout(aiMove, 180);
     draw();
     updateStatus();
   }
@@ -1286,6 +1341,10 @@ var Store = {
     var w = pxPerMm * CARD_MM;
     calCard.style.width = w + "px";
     calCard.style.height = (w * CARD_RATIO) + "px";
+    // 卡片可能比滑块默认范围更宽/更窄（手机 px/mm 更高），这里把滑块范围一起撑开，
+    // 否则浏览器会把 value 夹紧到边界，导致显示值与实际校准值不一致。
+    calSlider.min = String(Math.min(120, Math.round(w)));
+    calSlider.max = String(Math.max(700, Math.round(w)));
     calSlider.value = String(Math.round(w));
     calValue.textContent = Math.round(w) + " px";
     infoEl.textContent = "1 cm ≈ " + (pxPerMm * 10).toFixed(1) + " px";
@@ -1389,6 +1448,7 @@ var Store = {
   var data = null;
   var timerId = null;
   var running = false;
+  var starting = false;
   var peak = 0;
 
   var offset = parseFloat(Store.get("db-offset") || "0");
@@ -1404,6 +1464,8 @@ var Store = {
 
   function stop() {
     running = false;
+    starting = false;
+    btn.disabled = false;
     if (timerId) { clearInterval(timerId); timerId = null; }
     if (stream) {
       var tracks = stream.getTracks();
@@ -1442,18 +1504,32 @@ var Store = {
   }
 
   function start() {
+    if (running || starting) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       statusEl.textContent = "浏览器不支持麦克风（需 HTTPS 访问）";
       return;
     }
+    starting = true;
+    btn.disabled = true;
     statusEl.textContent = "请求麦克风权限…";
     navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
     }).then(function (s) {
       stream = s;
       var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { statusEl.textContent = "浏览器不支持 Web Audio"; return; }
+      if (!AC) {
+        // 不支持 Web Audio：把麦克风流关掉，别让它一直占用
+        var tracks0 = stream.getTracks();
+        for (var ti = 0; ti < tracks0.length; ti++) tracks0[ti].stop();
+        stream = null;
+        starting = false;
+        btn.disabled = false;
+        statusEl.textContent = "浏览器不支持 Web Audio";
+        return;
+      }
       audioCtx = new AC();
+      // Safari / iOS 里新建的 AudioContext 常是 suspended，不 resume 会一直读到 0
+      if (audioCtx.state === "suspended" && audioCtx.resume) audioCtx.resume();
       var source = audioCtx.createMediaStreamSource(stream);
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 2048;
@@ -1462,11 +1538,15 @@ var Store = {
       data = new Float32Array(analyser.fftSize);
 
       running = true;
+      starting = false;
+      btn.disabled = false;
       peak = 0;
       btn.textContent = "停止测量";
       statusEl.textContent = "测量中…";
       timerId = setInterval(update, 100);
     }).catch(function (err) {
+      starting = false;
+      btn.disabled = false;
       var name = err && err.name ? err.name : "未知错误";
       if (name === "NotAllowedError") statusEl.textContent = "麦克风权限被拒绝";
       else if (name === "NotFoundError") statusEl.textContent = "没有找到麦克风设备";
