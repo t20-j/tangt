@@ -42,9 +42,17 @@
 
 ```
 工具站/
-├── index.html   ← 整个网站（结构 + 样式 + 脚本）
+├── index.html              ← 整个网站（结构 + 样式 + 脚本）
+├── manifest.webmanifest    ← PWA 应用清单（名称、图标、全屏启动）
+├── sw.js                   ← Service Worker（离线缓存）
+├── icon-192.png            ← 桌面 / 安装图标 192×192
+├── icon-512.png            ← 安装图标 512×512
+├── icon-maskable-512.png   ← Android 自适应图标（maskable）
+├── apple-touch-icon.png    ← iOS「添加到主屏幕」图标 180×180
 └── README.md
 ```
+
+所有文件都放在**仓库根目录**（和 `index.html` 同级），PWA 才能正常识别。
 
 ## 更新到 GitHub（网页方式，不用装软件）
 
@@ -52,6 +60,59 @@
 2. 点 `index.html` → 右上角铅笔图标（Edit）→ 全选删除 → 粘贴新的完整内容 → `Commit changes`
 3. 或者：`Add file` → `Upload files` → 把新文件拖进去 → `Commit changes`
 4. 等 1–3 分钟，刷新 https://t20-j.github.io/tangt/ 即可看到新版本（页面没变就按 `Ctrl + F5` 强制刷新）
+
+## 做成 Android App
+
+### 已打包版本 v1.0.0（2026-11-01）
+
+- 安装包：`我的工具箱-v1.0.0.apk`（约 0.95 MB，在上一级目录）
+- 包名 `com.t20j.toolbox`，versionCode 1，minSdk 24（Android 7.0+），targetSdk 36
+- 形式：TWA（Trusted Web Activity），原生外壳 + 加载线上网页，**需要联网**
+- 签名：`app-build/android.keystore`，别名 `android`，密码 `toolbox2026`
+  - SHA-256 指纹：`58:46:B9:40:13:C8:C0:5D:34:E8:F4:E3:D5:93:6A:02:0E:F8:A9:D0:D2:32:B7:4C:39:AE:78:7A:76:BB:20:8F`
+  - ⚠️ 这个 keystore 和密码务必保存好，以后升级 App 必须用同一个签名
+- 已上传 `.well-known/assetlinks.json` + `.nojekyll`，所以 App 打开时**不显示地址栏**
+- 改网站内容后 App 里自动生效，不需要重新打包；只有换图标 / 改名字 / 改包名才需要重打
+
+### 方式一：直接安装到桌面（PWA，零成本）
+
+手机 Chrome 打开 https://t20-j.github.io/tangt/ → 右上角 `⋮` → **添加到主屏幕**。
+之后从桌面图标打开就是全屏、无地址栏，断网也能打开（`sw.js` 已缓存页面）。
+
+### 方式二：自己重新打包成 .apk（PWABuilder 网页，不需要装开发环境）
+
+1. 打开 https://www.pwabuilder.com ，输入网址 `https://t20-j.github.io/tangt/`
+2. 点 **Package for stores** → 选 **Android**
+3. 应用名填「我的工具箱」，包名填 `com.t20j.toolbox`（可改，但之后别再变）
+4. 下载 zip，解压得到 `.apk`，传到手机安装（需允许「安装未知来源应用」）
+5. 生成的包是 **TWA**：原生外壳 + 加载线上网页，仍然需要联网
+
+**去掉顶部地址栏**（可选）：打包完 PWABuilder 会给一个 SHA-256 指纹，在仓库根目录新建
+`.well-known/assetlinks.json`，内容：
+
+```json
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.t20j.toolbox",
+    "sha256_cert_fingerprints": ["把 PWABuilder 给的指纹填这里"]
+  }
+}]
+```
+
+### 方式三：Capacitor（可完全离线、可上架）
+
+需要电脑装 JDK 17 + Android Studio：
+
+```bash
+npm install -g @capacitor/cli
+npx cap init "我的工具箱" com.t20j.toolbox --web-dir=.
+npx cap add android
+npx cap open android
+```
+
+把 `index.html` 等文件放进 `www/`，用 Android Studio 点 Run 即可安装到手机。
 
 ## 隐私
 
